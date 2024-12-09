@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "noImplicitAny": false,
+        "noEmitOnError": true,
+        "removeComments": false,
+        "sourceMap": true,
+        "target": "es6",
+        "module": "es2021",
+        "moduleResolution": "node",
+        "lib": ["es2021", "dom"],
+    },
+    "include": [
+        "script.ts",
+		"script_ext.ts"
+    ],
+	"types": [
+		"chrome"
+	]
+}

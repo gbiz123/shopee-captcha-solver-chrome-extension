@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Shopee Captcha Solver",
+  "description": "Automatically bypass any Shopee captcha",
+  "version": "1.0",
+  "action": {
+    "default_popup": "hello.html",
+    "default_icon": "logo_icon_black_bg.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.shopee.com/*",
+        "https://*.shopee.co.id/*",
+        "https://*.shopee.co.tw/*",
+        "https://*.shopee.co.vn/*",
+        "https://*.shopee.co.th/*",
+        "https://*.shopee.ph/*",
+        "https://*.shopee.com.my/*",
+        "https://*.shopee.sg/*",
+        "https://*.shopee.com.br/*",
+        "https://*.shopee.com.mx/*",
+        "https://*.shopee.com.co/*",
+        "https://*.shopee.cl/*"
+      ],
+      "all_frames": false,
+      "js": [
+        "script.js"
+      ]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "greg@sadcaptcha.com"
+    }
+  }
+}
