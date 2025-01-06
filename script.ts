@@ -560,58 +560,59 @@ interface Request {
 	}
 
 
-	let isCurrentSolve: boolean
+	let isCurrentSolve: boolean = false
 	async function solveCaptchaLoop() {
-		
-		if (captchaIsPresent()){
-			console.log("captcha detected by css selector")
-		} else {
-			console.log("waiting for captcha")
-			await findFirstElementToAppear(CAPTCHA_PRESENCE_INDICATORS)
-			console.log("captcha detected by mutation observer")
-		}
-
-		let captchaType: CaptchaType
-		try {
-			captchaType = await identifyCaptcha()
-		} catch (err) {
-			console.log("could not detect captcha type. restarting captcha loop")
-			await solveCaptchaLoop()
-		}
-
-		try {
-			if (await creditsApiCall() <= 0) {
-				console.log("out of credits")
-				alert("Out of SadCaptcha credits. Please boost your balance on sadcaptcha.com/dashboard.")
-				return
+		if (!isCurrentSolve) {
+			
+			if (captchaIsPresent()){
+				console.log("captcha detected by css selector")
+			} else {
+				console.log("waiting for captcha")
+				await findFirstElementToAppear(CAPTCHA_PRESENCE_INDICATORS)
+				console.log("captcha detected by mutation observer")
 			}
-		} catch (e) {
-			console.log("error making check credits api call")
-			console.error(e)
-			console.log("proceeding to attempt solution anyways")
-		}
-		
-		try {
-			if (!isCurrentSolve) {
-				isCurrentSolve = true
+
+			isCurrentSolve = true
+			let captchaType: CaptchaType
+			try {
+				captchaType = await identifyCaptcha()
+			} catch (err) {
+				console.log("could not detect captcha type. restarting captcha loop")
+				isCurrentSolve = false
+				await solveCaptchaLoop()
+			}
+
+			try {
+				if (await creditsApiCall() <= 0) {
+					console.log("out of credits")
+					alert("Out of SadCaptcha credits. Please boost your balance on sadcaptcha.com/dashboard.")
+					return
+				}
+			} catch (e) {
+				console.log("error making check credits api call")
+				console.error(e)
+				console.log("proceeding to attempt solution anyways")
+			}
+			
+			try {
 				switch (captchaType) {
 					case CaptchaType.PUZZLE:
-						solvePuzzle()
+						await solvePuzzle()
 						break
 					case CaptchaType.IMAGE_CRAWL:
-						solveImageCrawl()
+						await solveImageCrawl()
 						break
 				}
+			} catch (err) {
+				console.log("error solving captcha")
+				console.error(err)
+				console.log("restarting captcha loop")
+			} finally {
+				isCurrentSolve = false
+				await new Promise(r => setTimeout(r, 5000));
+				await solveCaptchaLoop()
 			}
-			isCurrentSolve = false
-		} catch (err) {
-			console.log("error solving captcha")
-			console.error(err)
-			console.log("restarting captcha loop")
 		}
-
-		await new Promise(r => setTimeout(r, 5000));
-		await solveCaptchaLoop()
 	}
 
 	solveCaptchaLoop()
