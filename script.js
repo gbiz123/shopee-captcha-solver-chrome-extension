@@ -67,6 +67,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     var IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = ".DfwepB";
     var IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#puzzleImgComponent";
     var IMAGE_CRAWL_BUTTON_SELECTOR = "#sliderContainer > div > div";
+    var IMAGE_CRAWL_RESET_BUTTON = "button.CtJZAZ";
     var IMAGE_CRAWL_UNIQUE_IDENTIFIERS = ["#NEW_CAPTCHA", "#captchaMask"];
     var PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]";
     var PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]";
@@ -366,9 +367,32 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             clientX: width,
             clientY: centerY
         }));
-        for (var i = 0; i < centerX; i++) {
+        for (var i = 1; i < centerX; i++) {
             mouseMove(width - i, centerY);
+            mouseOver(width - i, centerY);
         }
+    }
+    function randomMouseMovement() {
+        var randomX = Math.round(window.innerWidth * Math.random());
+        var randomY = Math.round(window.innerHeight * Math.random());
+        mouseMove(randomX, randomX);
+        mouseOver(randomX, randomY);
+    }
+    function clickElement(selector) {
+        var ele = document.querySelector(selector);
+        var rect = ele.getBoundingClientRect();
+        var x = rect.x;
+        var y = rect.y;
+        mouseMove(x, y);
+        mouseOver(x, y);
+        ele.dispatchEvent(new PointerEvent("click", {
+            pointerType: "mouse",
+            cancelable: true,
+            bubbles: true,
+            view: window,
+            clientX: x,
+            clientY: y
+        }));
     }
     function mouseMove(x, y, ele) {
         var c;
@@ -408,16 +432,47 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         console.log("puzzle slide distance = " + distance);
         return distance;
     }
-    function solveImageCrawl() {
+    function refreshImageCrawl() {
         return __awaiter(this, void 0, void 0, function () {
-            var puzzleImageSrc, pieceImageSrc, puzzleImg, pieceImg, slideButtonEle, startX, startY, puzzleEle, trajectory, solution, currentX, solutionDistanceBackwards, i;
+            var puzzleImageSrcOriginal;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)];
                     case 1:
+                        puzzleImageSrcOriginal = _a.sent();
+                        clickElement(IMAGE_CRAWL_RESET_BUTTON);
+                        _a.label = 2;
+                    case 2: return [4 /*yield*/, getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)];
+                    case 3:
+                        if (!((_a.sent()) === puzzleImageSrcOriginal)) return [3 /*break*/, 5];
+                        console.log("waiting for refresh...");
+                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 100); })];
+                    case 4:
+                        _a.sent();
+                        return [3 /*break*/, 2];
+                    case 5:
+                        console.log("refresh complete");
+                        return [2 /*return*/];
+                }
+            });
+        });
+    }
+    function solveImageCrawl() {
+        return __awaiter(this, void 0, void 0, function () {
+            var puzzleImageSrc, pieceImageSrc, puzzleImg, pieceImg, slideButtonEle, startX, startY, puzzleEle, trajectory, solution, currentX, solutionDistanceBackwards, i, nextX, nextY;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, refreshImageCrawl()];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 300); })];
+                    case 2:
+                        _a.sent();
+                        return [4 /*yield*/, getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)];
+                    case 3:
                         puzzleImageSrc = _a.sent();
                         return [4 /*yield*/, getImageSource(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR)];
-                    case 2:
+                    case 4:
                         pieceImageSrc = _a.sent();
                         puzzleImg = getBase64StringFromDataURL(puzzleImageSrc);
                         pieceImg = getBase64StringFromDataURL(pieceImageSrc);
@@ -426,39 +481,45 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         startY = getElementCenter(slideButtonEle).y;
                         puzzleEle = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
                         return [4 /*yield*/, getSlidePieceTrajectory(slideButtonEle, puzzleEle)];
-                    case 3:
+                    case 5:
                         trajectory = _a.sent();
                         return [4 /*yield*/, imageCrawlApiCall({
                                 piece_image_b64: pieceImg,
                                 puzzle_image_b64: puzzleImg,
                                 slide_piece_trajectory: trajectory
                             })];
-                    case 4:
+                    case 6:
                         solution = _a.sent();
                         currentX = getElementCenter(slideButtonEle).x;
                         solutionDistanceBackwards = currentX - startX - solution;
                         return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 100); })];
-                    case 5:
-                        _a.sent();
-                        i = 0;
-                        _a.label = 6;
-                    case 6:
-                        if (!(i < solutionDistanceBackwards)) return [3 /*break*/, 9];
-                        mouseMove(currentX - i, startY + Math.random() * 5);
-                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 10 + Math.random() * 5); })];
                     case 7:
                         _a.sent();
+                        i = 0;
                         _a.label = 8;
                     case 8:
-                        i += 1;
-                        return [3 /*break*/, 6];
-                    case 9: return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 300); })];
+                        if (!(i < solutionDistanceBackwards)) return [3 /*break*/, 11];
+                        if (i % 10 == 0) {
+                            randomMouseMovement();
+                        }
+                        nextX = currentX - i;
+                        nextY = startY + Math.random() * 5;
+                        mouseMove(nextX, nextY);
+                        mouseOver(nextX, nextY);
+                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 10 + Math.random() * 5); })];
+                    case 9:
+                        _a.sent();
+                        _a.label = 10;
                     case 10:
+                        i += 1;
+                        return [3 /*break*/, 8];
+                    case 11: return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 300); })];
+                    case 12:
                         _a.sent();
                         mouseMove(startX + solution, startY);
                         mouseUp(startX + solution, startY);
                         return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 3000); })];
-                    case 11:
+                    case 13:
                         _a.sent();
                         return [2 /*return*/];
                 }
@@ -494,6 +555,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         _a.label = 1;
                     case 1:
                         if (!(pixel < slideBarWidth)) return [3 /*break*/, 5];
+                        if (pixel % 10 == 0) {
+                            randomMouseMovement();
+                        }
                         return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 10 + Math.random() * 5); })];
                     case 2:
                         _a.sent();

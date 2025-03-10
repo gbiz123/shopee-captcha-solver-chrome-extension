@@ -42,6 +42,7 @@ interface Request {
 	const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = ".DfwepB"
 	const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#puzzleImgComponent"
 	const IMAGE_CRAWL_BUTTON_SELECTOR = "#sliderContainer > div > div"
+	const IMAGE_CRAWL_RESET_BUTTON = "button.CtJZAZ"
 	const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = ["#NEW_CAPTCHA", "#captchaMask"]
 
 	const PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]"
@@ -312,9 +313,36 @@ interface Request {
 				clientY: centerY
 			})
 		)
-		for (let i = 0; i < centerX; i++) {
+		for (let i = 1; i < centerX; i++) {
 			mouseMove(width - i, centerY)
+			mouseOver(width - i, centerY)
 		}
+	}
+
+	function randomMouseMovement() {
+		let randomX = Math.round(window.innerWidth * Math.random())
+		let randomY = Math.round(window.innerHeight * Math.random())
+		mouseMove(randomX, randomX)
+		mouseOver(randomX, randomY)
+	}
+
+	function clickElement(selector: string) {
+		let ele = document.querySelector(selector)
+		let rect = ele.getBoundingClientRect()
+		let x = rect.x
+		let y = rect.y
+		mouseMove(x ,y)
+		mouseOver(x, y)
+		ele.dispatchEvent(
+			new PointerEvent("click", {
+				pointerType: "mouse",
+				cancelable: true,
+				bubbles: true,
+				view: window,
+				clientX: x,
+				clientY: y
+			})
+		)
 	}
 
 	function mouseMove(x: number, y: number, ele?: Element): void {
@@ -360,7 +388,20 @@ interface Request {
 		return distance
 	}
 
+	async function refreshImageCrawl() {
+		let puzzleImageSrcOriginal = await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
+		clickElement(IMAGE_CRAWL_RESET_BUTTON)
+		while (await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) === puzzleImageSrcOriginal) {
+			console.log("waiting for refresh...")
+			await new Promise(r => setTimeout(r, 100));
+			continue
+		}
+		console.log("refresh complete")
+	}
+
 	async function solveImageCrawl(): Promise<void> {
+		await refreshImageCrawl()
+		await new Promise(r => setTimeout(r, 300));
 		let puzzleImageSrc = await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
 		let pieceImageSrc = await getImageSource(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR)
 		let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc)
@@ -369,6 +410,7 @@ interface Request {
 		const startX = getElementCenter(slideButtonEle).x
 		const startY = getElementCenter(slideButtonEle).y
 		let puzzleEle = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
+
 		let trajectory = await getSlidePieceTrajectory(slideButtonEle, puzzleEle)
 		let solution = await imageCrawlApiCall({
 			piece_image_b64: pieceImg,
@@ -383,10 +425,13 @@ interface Request {
 				i < solutionDistanceBackwards;
 				i += 1
 		) {
-			mouseMove(
-				currentX - i,
-				startY + Math.random() * 5
-			)
+			if (i % 10 == 0) {
+				randomMouseMovement()
+			}
+			let nextX = currentX - i
+			let nextY = startY + Math.random() * 5
+			mouseMove(nextX, nextY)
+			mouseOver(nextX, nextY)
 			await new Promise(r => setTimeout(r, 10 + Math.random() * 5));
 		}
 		await new Promise(r => setTimeout(r, 300));
@@ -418,6 +463,9 @@ interface Request {
 			})
 		)
 		for (let pixel = 0; pixel < slideBarWidth; pixel += mouseStep) {
+			if (pixel % 10 == 0) {
+				randomMouseMovement()
+			}
 			await new Promise(r => setTimeout(r, 10 + Math.random() * 5));
 			//moveMouseTo(slideButtonCenter.x + pixel, slideButtonCenter.y - pixel)
 			slideButton.dispatchEvent(
