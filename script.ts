@@ -314,8 +314,13 @@ interface Request {
 			})
 		)
 		for (let i = 1; i < centerX; i++) {
-			mouseMove(width - i, centerY)
-			mouseOver(width - i, centerY)
+			try {
+				mouseMove(width - i, centerY)
+				mouseOver(width - i, centerY)
+			} catch (err) {
+				console.log("error moving mouse into page: ")
+				console.dir(err)
+			}
 		}
 	}
 
@@ -401,7 +406,7 @@ interface Request {
 
 	async function solveImageCrawl(): Promise<void> {
 		await refreshImageCrawl()
-		await new Promise(r => setTimeout(r, 300));
+		await new Promise(r => setTimeout(r, 100));
 		let puzzleImageSrc = await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
 		let pieceImageSrc = await getImageSource(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR)
 		let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc)

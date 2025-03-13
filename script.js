@@ -368,8 +368,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
             clientY: centerY
         }));
         for (var i = 1; i < centerX; i++) {
-            mouseMove(width - i, centerY);
-            mouseOver(width - i, centerY);
+            try {
+                mouseMove(width - i, centerY);
+                mouseOver(width - i, centerY);
+            }
+            catch (err) {
+                console.log("error moving mouse into page: ");
+                console.dir(err);
+            }
         }
     }
     function randomMouseMovement() {
@@ -465,7 +471,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     case 0: return [4 /*yield*/, refreshImageCrawl()];
                     case 1:
                         _a.sent();
-                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 300); })];
+                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 100); })];
                     case 2:
                         _a.sent();
                         return [4 /*yield*/, getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)];
