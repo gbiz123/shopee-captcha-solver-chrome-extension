@@ -337,6 +337,17 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         }));
         console.log("mouse over at " + x + ", " + y);
     }
+    function mouseOut(x, y) {
+        var underMouse = document.elementFromPoint(x, y);
+        underMouse.dispatchEvent(new MouseEvent("mouseout", {
+            cancelable: true,
+            bubbles: true,
+            view: window,
+            clientX: x,
+            clientY: y
+        }));
+        console.log("mouse over at " + x + ", " + y);
+    }
     function mouseDown(x, y) {
         var underMouse = document.elementFromPoint(x, y);
         underMouse.dispatchEvent(new MouseEvent("mousedown", {
@@ -352,9 +363,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         var width = window.innerWidth;
         var centerX = window.innerWidth / 2;
         var centerY = window.innerHeight / 2;
-        CONTAINER.dispatchEvent(new PointerEvent("pointerover", {
-            pointerType: "mouse",
-            cancelable: true,
+        CONTAINER.dispatchEvent(new MouseEvent("mouseenter", {
             bubbles: true,
             view: window,
             clientX: width,
@@ -379,10 +388,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         }
     }
     function randomMouseMovement() {
+        //let randomX = aroundX + Math.round((Math.random() * 20) - 10)
+        //let randomY = aroundY + Math.round((Math.random() * 20) - 10)
         var randomX = Math.round(window.innerWidth * Math.random());
         var randomY = Math.round(window.innerHeight * Math.random());
         mouseMove(randomX, randomX);
         mouseOver(randomX, randomY);
+        mouseOut(randomX, randomY);
     }
     function clickElement(selector) {
         var ele = document.querySelector(selector);
@@ -465,13 +477,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
     function solveImageCrawl() {
         return __awaiter(this, void 0, void 0, function () {
-            var puzzleImageSrc, pieceImageSrc, puzzleImg, pieceImg, slideButtonEle, startX, startY, puzzleEle, trajectory, solution, currentX, solutionDistanceBackwards, i, nextX, nextY;
+            var puzzleImageSrc, pieceImageSrc, puzzleImg, pieceImg, slideButtonEle, startX, startY, puzzleEle, trajectory, solution, currentX, currentY, solutionDistanceBackwards, pixel, nextX, nextY;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, refreshImageCrawl()];
+                    case 0:
+                        mouseEnterPage();
+                        return [4 /*yield*/, refreshImageCrawl()];
                     case 1:
                         _a.sent();
-                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 100); })];
+                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 500); })];
                     case 2:
                         _a.sent();
                         return [4 /*yield*/, getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)];
@@ -497,19 +511,20 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                     case 6:
                         solution = _a.sent();
                         currentX = getElementCenter(slideButtonEle).x;
+                        currentY = getElementCenter(slideButtonEle).y;
                         solutionDistanceBackwards = currentX - startX - solution;
                         return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 100); })];
                     case 7:
                         _a.sent();
-                        i = 0;
+                        pixel = 0;
                         _a.label = 8;
                     case 8:
-                        if (!(i < solutionDistanceBackwards)) return [3 /*break*/, 11];
-                        if (i % 10 == 0) {
-                            randomMouseMovement();
-                        }
-                        nextX = currentX - i;
-                        nextY = startY + Math.random() * 5;
+                        if (!(pixel < solutionDistanceBackwards)) return [3 /*break*/, 11];
+                        nextX = currentX - pixel;
+                        nextY = currentY - Math.log(pixel + 1);
+                        //if (pixel % 10 == 0) {
+                        //	randomMouseMovement()
+                        //}
                         mouseMove(nextX, nextY);
                         mouseOver(nextX, nextY);
                         return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 10 + Math.random() * 5); })];
@@ -517,7 +532,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         _a.sent();
                         _a.label = 10;
                     case 10:
-                        i += 1;
+                        pixel += 1;
                         return [3 /*break*/, 8];
                     case 11: return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 300); })];
                     case 12:
@@ -534,7 +549,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
     function getSlidePieceTrajectory(slideButton, puzzle) {
         return __awaiter(this, void 0, void 0, function () {
-            var sliderPieceContainer, slideBarWidth, timesPieceDidNotMove, slideButtonCenter, puzzleImageBoundingBox, trajectory, mouseStep, pixel, trajectoryElement;
+            var sliderPieceContainer, slideBarWidth, timesPieceDidNotMove, slideButtonCenter, puzzleImageBoundingBox, trajectory, mouseStep, pixel, nextX, nextY, trajectoryElement;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -547,7 +562,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         puzzleImageBoundingBox = puzzle.getBoundingClientRect();
                         trajectory = [];
                         mouseStep = 3;
-                        mouseEnterPage();
                         mouseMove(slideButtonCenter.x, slideButtonCenter.y);
                         mouseDown(slideButtonCenter.x, slideButtonCenter.y);
                         slideButton.dispatchEvent(new MouseEvent("mousedown", {
@@ -561,21 +575,26 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
                         _a.label = 1;
                     case 1:
                         if (!(pixel < slideBarWidth)) return [3 /*break*/, 5];
-                        if (pixel % 10 == 0) {
-                            randomMouseMovement();
-                        }
+                        nextX = slideButtonCenter.x + pixel;
+                        nextY = slideButtonCenter.y - Math.log(pixel + 1);
+                        //if (pixel % 10 == 0) {
+                        //	randomMouseMovement()
+                        //}
                         return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 10 + Math.random() * 5); })];
                     case 2:
+                        //if (pixel % 10 == 0) {
+                        //	randomMouseMovement()
+                        //}
                         _a.sent();
                         //moveMouseTo(slideButtonCenter.x + pixel, slideButtonCenter.y - pixel)
                         slideButton.dispatchEvent(new MouseEvent("mousemove", {
                             cancelable: true,
                             bubbles: true,
                             view: window,
-                            clientX: slideButtonCenter.x + pixel,
-                            clientY: slideButtonCenter.y - Math.log(pixel + 1)
+                            clientX: nextX,
+                            clientY: nextY
                         }));
-                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 40); })];
+                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 10); })];
                     case 3:
                         _a.sent();
                         trajectoryElement = getTrajectoryElement(pixel, puzzleImageBoundingBox, sliderPieceContainer);

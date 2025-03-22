@@ -276,6 +276,20 @@ interface Request {
 		console.log("mouse over at " + x + ", " + y)
 	}
 
+	function mouseOut(x: number, y: number): void {
+		let underMouse = document.elementFromPoint(x, y)
+		underMouse.dispatchEvent(
+			new MouseEvent("mouseout", {
+				cancelable: true,
+				bubbles: true,
+				view: window,
+				clientX: x,
+				clientY: y
+			})
+		)
+		console.log("mouse over at " + x + ", " + y)
+	}
+
 	function mouseDown(x: number, y: number): void {
 		let underMouse = document.elementFromPoint(x, y)
 		underMouse.dispatchEvent(
@@ -295,9 +309,7 @@ interface Request {
 		let centerX = window.innerWidth / 2
 		let centerY = window.innerHeight / 2
 		CONTAINER.dispatchEvent(
-			new PointerEvent("pointerover", {
-				pointerType: "mouse",
-				cancelable: true,
+			new MouseEvent("mouseenter", {
 				bubbles: true,
 				view: window,
 				clientX: width,
@@ -325,10 +337,13 @@ interface Request {
 	}
 
 	function randomMouseMovement() {
+		//let randomX = aroundX + Math.round((Math.random() * 20) - 10)
+		//let randomY = aroundY + Math.round((Math.random() * 20) - 10)
 		let randomX = Math.round(window.innerWidth * Math.random())
 		let randomY = Math.round(window.innerHeight * Math.random())
 		mouseMove(randomX, randomX)
 		mouseOver(randomX, randomY)
+		mouseOut(randomX, randomY)
 	}
 
 	function clickElement(selector: string) {
@@ -405,8 +420,9 @@ interface Request {
 	}
 
 	async function solveImageCrawl(): Promise<void> {
+		mouseEnterPage()
 		await refreshImageCrawl()
-		await new Promise(r => setTimeout(r, 100));
+		await new Promise(r => setTimeout(r, 500));
 		let puzzleImageSrc = await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
 		let pieceImageSrc = await getImageSource(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR)
 		let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc)
@@ -423,18 +439,19 @@ interface Request {
 			slide_piece_trajectory: trajectory
 		})
 		let currentX = getElementCenter(slideButtonEle).x
+		let currentY = getElementCenter(slideButtonEle).y
 		let solutionDistanceBackwards = currentX - startX - solution
 		await new Promise(r => setTimeout(r, 100));
 		for (
-				let i = 0;
-				i < solutionDistanceBackwards;
-				i += 1
+				let pixel = 0;
+				pixel < solutionDistanceBackwards;
+				pixel += 1
 		) {
-			if (i % 10 == 0) {
-				randomMouseMovement()
-			}
-			let nextX = currentX - i
-			let nextY = startY + Math.random() * 5
+			let nextX = currentX - pixel
+			let nextY = currentY - Math.log(pixel + 1)
+			//if (pixel % 10 == 0) {
+			//	randomMouseMovement()
+			//}
 			mouseMove(nextX, nextY)
 			mouseOver(nextX, nextY)
 			await new Promise(r => setTimeout(r, 10 + Math.random() * 5));
@@ -455,7 +472,6 @@ interface Request {
 		let puzzleImageBoundingBox = puzzle.getBoundingClientRect()
 		let trajectory: Array<TrajectoryElement> = []
 		let mouseStep = 3
-		mouseEnterPage()
 		mouseMove(slideButtonCenter.x, slideButtonCenter.y)
 		mouseDown(slideButtonCenter.x, slideButtonCenter.y)
 		slideButton.dispatchEvent(
@@ -468,9 +484,11 @@ interface Request {
 			})
 		)
 		for (let pixel = 0; pixel < slideBarWidth; pixel += mouseStep) {
-			if (pixel % 10 == 0) {
-				randomMouseMovement()
-			}
+			let nextX = slideButtonCenter.x + pixel
+			let nextY = slideButtonCenter.y - Math.log(pixel + 1)
+			//if (pixel % 10 == 0) {
+			//	randomMouseMovement()
+			//}
 			await new Promise(r => setTimeout(r, 10 + Math.random() * 5));
 			//moveMouseTo(slideButtonCenter.x + pixel, slideButtonCenter.y - pixel)
 			slideButton.dispatchEvent(
@@ -478,11 +496,11 @@ interface Request {
 					cancelable: true,
 					bubbles: true,
 					view: window,
-					clientX: slideButtonCenter.x + pixel, 
-					clientY: slideButtonCenter.y - Math.log(pixel + 1)
+					clientX: nextX, 
+					clientY: nextY
 				})
 			)
-			await new Promise(r => setTimeout(r, 40));
+			await new Promise(r => setTimeout(r, 10));
 			let trajectoryElement = getTrajectoryElement(
 				pixel,
 				puzzleImageBoundingBox,
