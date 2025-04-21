@@ -449,12 +449,10 @@ interface Request {
 		) {
 			let nextX = currentX - pixel
 			let nextY = currentY - Math.log(pixel + 1)
-			//if (pixel % 10 == 0) {
-			//	randomMouseMovement()
-			//}
 			mouseMove(nextX, nextY)
 			mouseOver(nextX, nextY)
-			await new Promise(r => setTimeout(r, 10 + Math.random() * 5));
+			let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5)
+			await new Promise(r => setTimeout(r, pauseTime));
 		}
 		await new Promise(r => setTimeout(r, 300));
 		mouseMove(startX + solution, startY)
@@ -483,13 +481,12 @@ interface Request {
 				clientY: slideButtonCenter.y
 			})
 		)
-		for (let pixel = 0; pixel < slideBarWidth; pixel += mouseStep) {
+		for (let pixel = 0; pixel < slideBarWidth * 0.85; pixel += mouseStep) {
 			let nextX = slideButtonCenter.x + pixel
 			let nextY = slideButtonCenter.y - Math.log(pixel + 1)
-			//if (pixel % 10 == 0) {
-			//	randomMouseMovement()
-			//}
-			await new Promise(r => setTimeout(r, 10 + Math.random() * 5));
+			// Speed up as we go
+			let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5)
+			await new Promise(r => setTimeout(r, pauseTime));
 			//moveMouseTo(slideButtonCenter.x + pixel, slideButtonCenter.y - pixel)
 			slideButton.dispatchEvent(
 				new MouseEvent("mousemove", {
