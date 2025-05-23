@@ -419,6 +419,71 @@ interface Request {
 		console.log("refresh complete")
 	}
 
+	function generateNaturalApproach(start: {x: number, y: number}, end: {x: number, y: number}, steps: number): Array<{x: number, y: number}> {
+		const control1 = {
+			x: start.x + (end.x - start.x) * (0.2 + Math.random() * 0.2),
+			y: start.y + (Math.random() * 15 - 5)
+		};
+		
+		const control2 = {
+			x: start.x + (end.x - start.x) * (0.6 + Math.random() * 0.2),
+			y: end.y + (Math.random() * 10 - 5)
+		};
+		
+		const points = [];
+		for (let i = 0; i <= steps; i++) {
+			const t = i / steps;
+			const x = Math.pow(1 - t, 3) * start.x +
+					  3 * Math.pow(1 - t, 2) * t * control1.x +
+					  3 * (1 - t) * Math.pow(t, 2) * control2.x +
+					  Math.pow(t, 3) * end.x;
+					  
+			const y = Math.pow(1 - t, 3) * start.y +
+					  3 * Math.pow(1 - t, 2) * t * control1.y +
+					  3 * (1 - t) * Math.pow(t, 2) * control2.y +
+					  Math.pow(t, 3) * end.y;
+			
+			points.push({ x, y });
+		}
+		return points;
+	}
+
+	async function moveMouseTo(x: number, y: number): Promise<void> {
+		CONTAINER.dispatchEvent(
+			new MouseEvent("mousemove", {
+				bubbles: true,
+				view: window,
+				clientX: x,
+				clientY: y
+			})
+		)
+		console.log("moved mouse to " + x + ", " + y)
+	}
+
+	async function mouseApproach(x: number, y: number): Promise<void> {
+		// Natural approach to the handle
+		const approachStartX = x - 80 - Math.random() * 40;
+		const approachStartY = y + 40 + Math.random() * 30;
+		const approachPoints = generateNaturalApproach(
+			{ x: approachStartX, y: approachStartY },
+			{ x: x, y: y },
+			8 + Math.floor(Math.random() * 4)
+		);
+
+		// Move cursor to approach the handle naturally
+		for (const point of approachPoints) {
+			moveMouseTo(point.x, point.y);
+			await new Promise(r => setTimeout(r, 15 + Math.random() * 25));
+		}
+
+		// Hover on handle with slight jitter
+		await new Promise(r => setTimeout(r, 200 + Math.random() * 150));
+		moveMouseTo(
+			x + (Math.random() * 1.5 - 0.75),
+			y + (Math.random() * 1.5 - 0.75)
+		);
+	}
+
 	async function solveImageCrawl(): Promise<void> {
 		mouseEnterPage()
 		await refreshImageCrawl()
@@ -431,6 +496,11 @@ interface Request {
 		const startX = getElementCenter(slideButtonEle).x
 		const startY = getElementCenter(slideButtonEle).y
 		let puzzleEle = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
+
+		mouseApproach(startX, startY)
+
+		// Press down after a natural delay
+		await new Promise(r => setTimeout(r, 350 + Math.random() * 200));
 
 		let trajectory = await getSlidePieceTrajectory(slideButtonEle, puzzleEle)
 		let solution = await imageCrawlApiCall({
@@ -454,10 +524,20 @@ interface Request {
 			let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5)
 			await new Promise(r => setTimeout(r, pauseTime));
 		}
-		await new Promise(r => setTimeout(r, 300));
+		// Hold at final position
+		const holdTime = 1000 + Math.random() * 3000;
+		console.log(`Holding at final position for ${Math.round(holdTime)}ms`);
+		await new Promise(r => setTimeout(r, holdTime));
+		
+		// Small final tremor
+		const veryFinalX = startX + solution + (Math.random() * 0.3 - 0.15);
+		const veryFinalY = currentY + (Math.random() * 0.3 - 0.15);
+		moveMouseTo(veryFinalX, veryFinalY);
+		
+		await new Promise(r => setTimeout(r, 50 + Math.random() * 30));
 		mouseMove(startX + solution, startY)
 		mouseUp(startX + solution, startY)
-		await new Promise(r => setTimeout(r, 3000));
+		// await new Promise(r => setTimeout(r, 3000));
 	}
 
 	async function getSlidePieceTrajectory(slideButton: Element, puzzle: Element): Promise<Array<TrajectoryElement>> {
@@ -470,7 +550,6 @@ interface Request {
 		let puzzleImageBoundingBox = puzzle.getBoundingClientRect()
 		let trajectory: Array<TrajectoryElement> = []
 		let mouseStep = 3
-		mouseMove(slideButtonCenter.x, slideButtonCenter.y)
 		mouseDown(slideButtonCenter.x, slideButtonCenter.y)
 		slideButton.dispatchEvent(
 			new MouseEvent("mousedown", {
@@ -481,9 +560,20 @@ interface Request {
 				clientY: slideButtonCenter.y
 			})
 		)
+
+		const numSegments = 4
+
+		await new Promise(r => setTimeout(r, 180 + Math.random() * 120));
 		for (let pixel = 0; pixel < slideBarWidth * 0.85; pixel += mouseStep) {
 			let nextX = slideButtonCenter.x + pixel
 			let nextY = slideButtonCenter.y - Math.log(pixel + 1)
+			if (Math.random() > 0.9) {
+				const tremorX = nextX + (Math.random() * 0.6 - 0.3);
+				const tremorY = nextY + (Math.random() * 0.6 - 0.3);
+				moveMouseTo(tremorX, tremorY);
+				await new Promise(r => setTimeout(r, Math.random() * 500));
+				moveMouseTo(nextX, nextY);
+			}
 			// Speed up as we go
 			let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5)
 			await new Promise(r => setTimeout(r, pauseTime));
