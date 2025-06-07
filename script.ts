@@ -43,7 +43,7 @@ interface Request {
 	const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#puzzleImgComponent"
 	const IMAGE_CRAWL_BUTTON_SELECTOR = "#sliderContainer > div > div"
 	const IMAGE_CRAWL_RESET_BUTTON = "button.CtJZAZ"
-	const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = ["#NEW_CAPTCHA", "#captchaMask"]
+	const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR, IMAGE_CRAWL_PIECE_IMAGE_SELECTOR]
 
 	const PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]"
 	const PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]"
