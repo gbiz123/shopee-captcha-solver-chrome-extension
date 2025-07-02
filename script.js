@@ -67,8 +67,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     var IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = ".DfwepB";
     var IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#puzzleImgComponent";
     var IMAGE_CRAWL_BUTTON_SELECTOR = "#sliderContainer > div > div";
-    var IMAGE_CRAWL_RESET_BUTTON = "button.CtJZAZ";
-    var IMAGE_CRAWL_UNIQUE_IDENTIFIERS = ["#NEW_CAPTCHA", "#captchaMask"];
+    var IMAGE_CRAWL_RESET_BUTTON = "button.CtJZAZ, button.XAny99";
+    var IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR, IMAGE_CRAWL_PIECE_IMAGE_SELECTOR];
     var PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]";
     var PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]";
     var PUZZLE_PIECE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=true]";
