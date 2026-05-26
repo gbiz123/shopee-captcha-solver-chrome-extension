@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = true;
+        let apiKey = localStorage.getItem("sadCaptchaKey");
         if (apiKey) {
-            return "925d4ebe0258d96923994633efe2361f";
+            return apiKey;
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -41,7 +41,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = ".DfwepB";
     const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#puzzleImgComponent";
     const IMAGE_CRAWL_BUTTON_SELECTOR = "#sliderContainer > div > div";
-    const IMAGE_CRAWL_RESET_BUTTON = "button.CtJZAZ, button.XAny99";
+    const IMAGE_CRAWL_RESET_BUTTON = "button.XAny99";
     const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR, IMAGE_CRAWL_PIECE_IMAGE_SELECTOR];
     const PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]";
     const PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]";
