@@ -27,9 +27,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
         }
     });
     function getApiKey() {
-        let apiKey = localStorage.getItem("sadCaptchaKey");
+        let apiKey = true;
         if (apiKey) {
-            return apiKey;
+            return "925d4ebe0258d96923994633efe2361f";
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
