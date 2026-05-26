@@ -5,9 +5,12 @@
         "removeComments": false,
         "sourceMap": true,
         "target": "es6",
-        "module": "es2021",
-        "moduleResolution": "node",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
         "lib": ["es2021", "dom"],
+		"types": [
+			"chrome"
+		]
     },
     "include": [
         "script.ts",

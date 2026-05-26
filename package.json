@@ -1,7 +1,9 @@
 {
   "dependencies": {
-    "@types/chrome": "^0.0.269",
     "@types/node": "^20.12.11",
     "chrome": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.42"
   }
 }

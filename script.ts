@@ -106,7 +106,7 @@ interface Request {
 						if (node instanceof HTMLIFrameElement) {
 							let iframe = <HTMLIFrameElement>node 
 							setTimeout(() => {
-								let iframeElement = iframe.contentWindow.document.body.querySelector(selector)
+								let iframeElement = iframe.contentWindow!.document.body.querySelector(selector)
 								if (iframeElement) {
 									console.debug(`element matched ${selector} in iframe`)
 									observer.disconnect()
@@ -138,7 +138,7 @@ interface Request {
 			let targetDocument: Document;
 			if (iframeSelector !== undefined) {
 				let iframe = document.querySelector(iframeSelector) as HTMLIFrameElement
-				targetDocument = iframe.contentWindow.document
+				targetDocument = iframe.contentWindow!.document
 			} else {
 				targetDocument = window.document
 			}
@@ -211,7 +211,7 @@ interface Request {
 			let iframe = document.querySelector("iframe")
 			if (iframe) {
 				console.log("checking for selector in iframe")
-				ele = iframe.contentWindow.document.body.querySelector(selector)
+				ele = iframe.contentWindow!.document.body.querySelector(selector)
 				if (ele) {
 					console.log("Selector is present in iframe: " + selector)
 					return true
@@ -238,11 +238,10 @@ interface Request {
 	}
 
 	async function getImageSource(selector: string, iframeSelector?: string): Promise<string> {
-		console.log("waiting for image source")
 		let ele = await waitForElement(selector, iframeSelector)
 		let src = ele.getAttribute("src")
 		console.log("src = " + selector)
-		return src
+		return src!
 	}
 
 	function getBase64StringFromDataURL(dataUrl: string): string {
@@ -264,7 +263,7 @@ interface Request {
 	}
 
 	function mouseOver(x: number, y: number): void {
-		let underMouse = document.elementFromPoint(x, y)
+		let underMouse = document.elementFromPoint(x, y)!
 		underMouse.dispatchEvent(
 			new MouseEvent("mouseover", {
 				cancelable: true,
@@ -274,10 +273,11 @@ interface Request {
 				clientY: y
 			})
 		)
+		console.log("mouse over at " + x + ", " + y)
 	}
 
 	function mouseOut(x: number, y: number): void {
-		let underMouse = document.elementFromPoint(x, y)
+		let underMouse = document.elementFromPoint(x, y)!
 		underMouse.dispatchEvent(
 			new MouseEvent("mouseout", {
 				cancelable: true,
@@ -291,7 +291,7 @@ interface Request {
 	}
 
 	function mouseDown(x: number, y: number): void {
-		let underMouse = document.elementFromPoint(x, y)
+		let underMouse = document.elementFromPoint(x, y)!
 		underMouse.dispatchEvent(
 			new MouseEvent("mousedown", {
 				cancelable: true,
@@ -334,7 +334,6 @@ interface Request {
 				console.dir(err)
 			}
 		}
-		console.log("Mouse entered page")
 	}
 
 	function randomMouseMovement() {
@@ -348,7 +347,7 @@ interface Request {
 	}
 
 	function clickElement(selector: string) {
-		let ele = document.querySelector(selector)
+		let ele = document.querySelector(selector)!
 		let rect = ele.getBoundingClientRect()
 		let x = rect.x
 		let y = rect.y
@@ -383,6 +382,7 @@ interface Request {
 				clientY: y
 			})
 		)
+		console.log("moved mouse to " + x + ", " + y)
 	}
 
 	function getElementCenter(element: Element): Point {
@@ -409,7 +409,6 @@ interface Request {
 	}
 
 	async function refreshImageCrawl() {
-		console.log("attempting image refresh")
 		let puzzleImageSrcOriginal = await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
 		clickElement(IMAGE_CRAWL_RESET_BUTTON)
 		while (await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) === puzzleImageSrcOriginal) {
@@ -431,7 +430,7 @@ interface Request {
 			y: end.y + (Math.random() * 10 - 5)
 		};
 		
-		const points = [];
+		const points: Point[] = [];
 		for (let i = 0; i <= steps; i++) {
 			const t = i / steps;
 			const x = Math.pow(1 - t, 3) * start.x +
@@ -483,7 +482,6 @@ interface Request {
 			x + (Math.random() * 1.5 - 0.75),
 			y + (Math.random() * 1.5 - 0.75)
 		);
-		console.log("Approached point with mouse")
 	}
 
 	async function solveImageCrawl(): Promise<void> {
@@ -494,10 +492,10 @@ interface Request {
 		let pieceImageSrc = await getImageSource(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR)
 		let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc)
 		let pieceImg = getBase64StringFromDataURL(pieceImageSrc)
-		let slideButtonEle = document.querySelector(IMAGE_CRAWL_BUTTON_SELECTOR)
+		let slideButtonEle = document.querySelector(IMAGE_CRAWL_BUTTON_SELECTOR) as Element
 		const startX = getElementCenter(slideButtonEle).x
 		const startY = getElementCenter(slideButtonEle).y
-		let puzzleEle = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
+		let puzzleEle = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as Element
 
 		mouseApproach(startX, startY)
 
@@ -543,8 +541,7 @@ interface Request {
 	}
 
 	async function getSlidePieceTrajectory(slideButton: Element, puzzle: Element): Promise<Array<TrajectoryElement>> {
-		console.log("getting slide piece trajectory")
-		let sliderPieceContainer = document.querySelector(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR)
+		let sliderPieceContainer = document.querySelector(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR) as Element
 		console.log("got slider piece container")
 		let slideBarWidth = getElementWidth(puzzle)
 		console.log("slide bar width: " + slideBarWidth)
@@ -576,7 +573,6 @@ interface Request {
 				moveMouseTo(tremorX, tremorY);
 				await new Promise(r => setTimeout(r, Math.random() * 500));
 				moveMouseTo(nextX, nextY);
-				console.log("made mouse tremor")
 			}
 			// Speed up as we go
 			let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5)
@@ -617,7 +613,7 @@ interface Request {
 		largeImgBoundingBox: DOMRect,
 		sliderPiece: Element
 	): TrajectoryElement {
-		let sliderPieceStyle = sliderPiece.getAttribute("style")
+		let sliderPieceStyle = sliderPiece.getAttribute("style") as string
 		let rotateAngle = rotateAngleFromStyle(sliderPieceStyle)
 		let pieceCenter = getElementCenter(sliderPiece)
 		let pieceCenterProp = xyToProportionalPoint(largeImgBoundingBox, pieceCenter) // This returns undefined
@@ -667,7 +663,7 @@ interface Request {
 
 	async function solvePuzzle(): Promise<void> {
 		await new Promise(r => setTimeout(r, 3000));
-		let sliderButton = document.querySelector(PUZZLE_BUTTON_SELECTOR)
+		let sliderButton = document.querySelector(PUZZLE_BUTTON_SELECTOR) as Element
 		let buttonCenter = getElementCenter(sliderButton)
 		let preRequestSlidePixels = 10
 		mouseEnterPage()
@@ -692,7 +688,7 @@ interface Request {
 		console.log("converted image sources to b64 string")
 		let solution = await puzzleApiCall(puzzleImg, pieceImg)
 		console.log("got API result: " + solution)
-		let puzzleImageEle = document.querySelector(PUZZLE_PUZZLE_IMAGE_SELECTOR)
+		let puzzleImageEle = document.querySelector(PUZZLE_PUZZLE_IMAGE_SELECTOR) as Element
 		let distance = computePuzzleSlideDistance(solution, puzzleImageEle)
 		let currentX: number
 		let currentY: number
@@ -735,7 +731,7 @@ interface Request {
 			}
 
 			isCurrentSolve = true
-			let captchaType: CaptchaType
+			let captchaType: CaptchaType = CaptchaType.IMAGE_CRAWL
 			try {
 				captchaType = await identifyCaptcha()
 			} catch (err) {
