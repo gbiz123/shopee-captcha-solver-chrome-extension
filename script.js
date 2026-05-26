@@ -8,7 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
 (function () {
     // Avoid multiple instances running: 
     if (window.hasRun === true)
@@ -27,9 +26,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
         }
     });
     function getApiKey() {
-        let apiKey = true;
+        let apiKey = localStorage.getItem("sadCaptchaKey");
         if (apiKey) {
-            return "925d4ebe0258d96923994633efe2361f";
+            return apiKey;
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
