@@ -42,7 +42,7 @@ interface Request {
 	const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = ".DfwepB"
 	const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#puzzleImgComponent"
 	const IMAGE_CRAWL_BUTTON_SELECTOR = "#sliderContainer > div > div"
-	const IMAGE_CRAWL_RESET_BUTTON = "button.CtJZAZ, button.XAny99"
+	const IMAGE_CRAWL_RESET_BUTTON = "button.XAny99"
 	const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR, IMAGE_CRAWL_PIECE_IMAGE_SELECTOR]
 
 	const PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]"
@@ -409,6 +409,7 @@ interface Request {
 	}
 
 	async function refreshImageCrawl() {
+		await new Promise(r => setTimeout(r, 1000));
 		let puzzleImageSrcOriginal = await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
 		clickElement(IMAGE_CRAWL_RESET_BUTTON)
 		while (await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) === puzzleImageSrcOriginal) {
