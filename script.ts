@@ -543,6 +543,7 @@ interface Request {
 	}
 
 	async function getSlidePieceTrajectory(slideButton: Element, puzzle: Element): Promise<Array<TrajectoryElement>> {
+		console.log("getting slide piece trajectory")
 		let sliderPieceContainer = document.querySelector(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR)
 		console.log("got slider piece container")
 		let slideBarWidth = getElementWidth(puzzle)
