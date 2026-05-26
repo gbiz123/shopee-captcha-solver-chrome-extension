@@ -238,6 +238,7 @@ interface Request {
 	}
 
 	async function getImageSource(selector: string, iframeSelector?: string): Promise<string> {
+		console.log("waiting for image source")
 		let ele = await waitForElement(selector, iframeSelector)
 		let src = ele.getAttribute("src")
 		console.log("src = " + selector)
@@ -273,7 +274,6 @@ interface Request {
 				clientY: y
 			})
 		)
-		console.log("mouse over at " + x + ", " + y)
 	}
 
 	function mouseOut(x: number, y: number): void {
@@ -334,6 +334,7 @@ interface Request {
 				console.dir(err)
 			}
 		}
+		console.log("Mouse entered page")
 	}
 
 	function randomMouseMovement() {
@@ -382,7 +383,6 @@ interface Request {
 				clientY: y
 			})
 		)
-		console.log("moved mouse to " + x + ", " + y)
 	}
 
 	function getElementCenter(element: Element): Point {
@@ -409,6 +409,7 @@ interface Request {
 	}
 
 	async function refreshImageCrawl() {
+		console.log("attempting image refresh")
 		let puzzleImageSrcOriginal = await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
 		clickElement(IMAGE_CRAWL_RESET_BUTTON)
 		while (await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) === puzzleImageSrcOriginal) {
@@ -482,6 +483,7 @@ interface Request {
 			x + (Math.random() * 1.5 - 0.75),
 			y + (Math.random() * 1.5 - 0.75)
 		);
+		console.log("Approached point with mouse")
 	}
 
 	async function solveImageCrawl(): Promise<void> {
@@ -573,6 +575,7 @@ interface Request {
 				moveMouseTo(tremorX, tremorY);
 				await new Promise(r => setTimeout(r, Math.random() * 500));
 				moveMouseTo(nextX, nextY);
+				console.log("made mouse tremor")
 			}
 			// Speed up as we go
 			let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5)
