@@ -501,7 +501,7 @@ interface Request {
 		mouseApproach(startX, startY)
 
 		// Press down after a natural delay
-		await new Promise(r => setTimeout(r, 350 + Math.random() * 200));
+		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
 
 		let trajectory = await getSlidePieceTrajectory(slideButtonEle, puzzleEle)
 		let solution = await imageCrawlApiCall({
@@ -526,7 +526,7 @@ interface Request {
 			await new Promise(r => setTimeout(r, pauseTime));
 		}
 		// Hold at final position
-		const holdTime = 1000 + Math.random() * 3000;
+		const holdTime = Math.random() * 500;
 		console.log(`Holding at final position for ${Math.round(holdTime)}ms`);
 		await new Promise(r => setTimeout(r, holdTime));
 		
