@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = true;
+        let apiKey = localStorage.getItem("sadCaptchaKey");
         if (apiKey) {
-            return "925d4ebe0258d96923994633efe2361f";
+            return apiKey;
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -434,7 +434,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             let puzzleEle = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
             mouseApproach(startX, startY);
             // Press down after a natural delay
-            yield new Promise(r => setTimeout(r, 350 + Math.random() * 200));
+            yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
             let trajectory = yield getSlidePieceTrajectory(slideButtonEle, puzzleEle);
             let solution = yield imageCrawlApiCall({
                 piece_image_b64: pieceImg,
@@ -454,7 +454,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 yield new Promise(r => setTimeout(r, pauseTime));
             }
             // Hold at final position
-            const holdTime = 1000 + Math.random() * 3000;
+            const holdTime = Math.random() * 500;
             console.log(`Holding at final position for ${Math.round(holdTime)}ms`);
             yield new Promise(r => setTimeout(r, holdTime));
             // Small final tremor
