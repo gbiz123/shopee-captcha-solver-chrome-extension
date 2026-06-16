@@ -372,28 +372,33 @@ interface Request {
 
 	function clickElement(selector: string) {
 		let ele = document.querySelector(selector)!
-		if (ele.tagName === "BUTTON") {
-			console.log("sending js click to button");
-			(ele as HTMLButtonElement).click()
-		} else {
-			console.log("sending mouse event click")
-			let rect = ele.getBoundingClientRect()
-			let x = rect.x
-			let y = rect.y
-			mouseMove(x ,y)
-			mouseOver(x, y)
-			ele.dispatchEvent(
-				new PointerEvent("click", {
-					pointerType: "mouse",
-					cancelable: true,
-					bubbles: true,
-					view: window,
-					clientX: x,
-					clientY: y
-				})
-			)
-			console.log("Clicked " + selector)
-		}
+		console.log("sending mouse event click")
+		let rect = ele.getBoundingClientRect()
+		let x = rect.x
+		let y = rect.y
+
+		const eventOptions = {
+			pointerType: "mouse",
+			cancelable: true,
+			bubbles: true,
+			view: window,
+			clientX: x,
+			clientY: y,
+			button: 0,
+			buttons: 1,
+		};
+
+		ele.dispatchEvent(new PointerEvent("pointerover", eventOptions));
+		ele.dispatchEvent(new PointerEvent("pointerenter", eventOptions));
+		ele.dispatchEvent(new MouseEvent("mouseover", eventOptions));
+		ele.dispatchEvent(new MouseEvent("mouseenter", eventOptions));
+		ele.dispatchEvent(new MouseEvent("mousemove", eventOptions));
+		ele.dispatchEvent(new PointerEvent("pointermove", eventOptions));
+		ele.dispatchEvent(new PointerEvent("pointerdown", eventOptions));
+		ele.dispatchEvent(new MouseEvent("mousedown", eventOptions));
+		ele.dispatchEvent(new PointerEvent("pointerup", eventOptions));
+		ele.dispatchEvent(new MouseEvent("mouseup", eventOptions));
+		ele.dispatchEvent(new MouseEvent("click", eventOptions));
 	}
 
 	function mouseMove(x: number, y: number, ele?: Element): void {
