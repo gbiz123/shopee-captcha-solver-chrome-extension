@@ -780,6 +780,9 @@ interface Request {
 		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
 		clickElement(IMAGE_DRAG_VERIFY_BUTTON_SELECTOR)
 		console.log("clicked verify button")
+		
+		// wait before continuing to avoid excessive solving
+		await new Promise(r => setTimeout(r, 5000));
 	}
 
 	function captchaIsPresent(): boolean {
