@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = true;
+        let apiKey = localStorage.getItem("sadCaptchaKey");
         if (apiKey) {
-            return "925d4ebe0258d96923994633efe2361f";
+            return apiKey;
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -48,6 +48,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     const PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]";
     const PUZZLE_PIECE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=true]";
     const PUZZLE_UNIQUE_IDENTIFIERS = ["aside[aria-modal=true]"];
+    const IMAGE_DRAG_VERIFY_BUTTON_SELECTOR = ".rb6XLo, #NEW_CAPTCHA button:not(:has(*))";
     const IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas";
     const IMAGE_DRAG_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA img";
     const IMAGE_DRAG_UNIQUE_IDENTIFIERS = ["#NEW_CAPTCHA canvas"];
@@ -323,19 +324,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     }
     function clickElement(selector) {
         let ele = document.querySelector(selector);
-        let rect = ele.getBoundingClientRect();
-        let x = rect.x;
-        let y = rect.y;
-        mouseMove(x, y);
-        mouseOver(x, y);
-        ele.dispatchEvent(new PointerEvent("click", {
-            pointerType: "mouse",
-            cancelable: true,
-            bubbles: true,
-            view: window,
-            clientX: x,
-            clientY: y
-        }));
+        if (ele.tagName === "BUTTON") {
+            console.log("sending js click to button");
+            ele.click();
+        }
+        else {
+            console.log("sending mouse event click");
+            let rect = ele.getBoundingClientRect();
+            let x = rect.x;
+            let y = rect.y;
+            mouseMove(x, y);
+            mouseOver(x, y);
+            ele.dispatchEvent(new PointerEvent("click", {
+                pointerType: "mouse",
+                cancelable: true,
+                bubbles: true,
+                view: window,
+                clientX: x,
+                clientY: y
+            }));
+            console.log("Clicked " + selector);
+        }
     }
     function mouseMove(x, y, ele) {
         let c;
@@ -650,7 +659,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             let apiResp = yield imageDragApiCall(puzzleImg, pieceImg);
             let bbox = puzzleImageEle.getBoundingClientRect();
             let answerX = bbox.x + (apiResp.proportionalPoints[0].proportionX * bbox.width);
-            let answerY = bbox.y + (apiResp.proportionalPoints[0].proportionY * bbox.width);
+            let answerY = bbox.y + (apiResp.proportionalPoints[0].proportionY * bbox.height);
             console.log("got API response for image drag");
             // Press down after a natural delay
             yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
@@ -662,6 +671,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
             mouseUp(answerX, answerY);
             console.log("lifting mouse");
+            // Click verify
+            yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
+            clickElement(IMAGE_DRAG_VERIFY_BUTTON_SELECTOR);
+            console.log("clicked verify button");
         });
     }
     function captchaIsPresent() {

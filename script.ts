@@ -372,21 +372,28 @@ interface Request {
 
 	function clickElement(selector: string) {
 		let ele = document.querySelector(selector)!
-		let rect = ele.getBoundingClientRect()
-		let x = rect.x
-		let y = rect.y
-		mouseMove(x ,y)
-		mouseOver(x, y)
-		ele.dispatchEvent(
-			new PointerEvent("click", {
-				pointerType: "mouse",
-				cancelable: true,
-				bubbles: true,
-				view: window,
-				clientX: x,
-				clientY: y
-			})
-		)
+		if (ele.tagName === "BUTTON") {
+			console.log("sending js click to button");
+			(ele as HTMLButtonElement).click()
+		} else {
+			console.log("sending mouse event click")
+			let rect = ele.getBoundingClientRect()
+			let x = rect.x
+			let y = rect.y
+			mouseMove(x ,y)
+			mouseOver(x, y)
+			ele.dispatchEvent(
+				new PointerEvent("click", {
+					pointerType: "mouse",
+					cancelable: true,
+					bubbles: true,
+					view: window,
+					clientX: x,
+					clientY: y
+				})
+			)
+			console.log("Clicked " + selector)
+		}
 	}
 
 	function mouseMove(x: number, y: number, ele?: Element): void {
@@ -749,7 +756,7 @@ interface Request {
 		let apiResp = await imageDragApiCall(puzzleImg, pieceImg)
 		let bbox = puzzleImageEle.getBoundingClientRect()
 		let answerX = bbox.x + (apiResp.proportionalPoints[0].proportionX * bbox.width)
-		let answerY = bbox.y + (apiResp.proportionalPoints[0].proportionY * bbox.width)
+		let answerY = bbox.y + (apiResp.proportionalPoints[0].proportionY * bbox.height)
 		console.log("got API response for image drag")
 		
 		// Press down after a natural delay
@@ -760,13 +767,14 @@ interface Request {
 		// Lift the mouse up at the correct location
 		await moveMouseTo(answerX, answerY)
 		console.log("moved mouse to answer")
-
 		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
 		mouseUp(answerX, answerY)
 		console.log("lifting mouse")
 
+		// Click verify
 		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
 		clickElement(IMAGE_DRAG_VERIFY_BUTTON_SELECTOR)
+		console.log("clicked verify button")
 	}
 
 	function captchaIsPresent(): boolean {
