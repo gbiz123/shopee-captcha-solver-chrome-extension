@@ -10,24 +10,7 @@
   "content_scripts": [
     {
       "matches": [
-		"http://*.xiapibuy.com/*",
-		"https://*.xiapibuy.com/*",
-        "https://*.shopee.com/*",
-        "https://*.shopee.co.id/*",
-        "https://*.shopee.id/*",
-        "https://*.shopee.co.tw/*",
-        "https://*.shopee.tw/*",
-        "https://*.shopee.co.vn/*",
-        "https://*.shopee.vn/*",
-        "https://*.shopee.co.th/*",
-        "https://*.shopee.th/*",
-        "https://*.shopee.ph/*",
-        "https://*.shopee.com.my/*",
-        "https://*.shopee.sg/*",
-        "https://*.shopee.com.br/*",
-        "https://*.shopee.com.mx/*",
-        "https://*.shopee.com.co/*",
-        "https://*.shopee.cl/*"
+		"<all_urls>"
       ],
       "all_frames": false,
       "js": [

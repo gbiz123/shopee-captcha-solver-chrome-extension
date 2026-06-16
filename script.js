@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = localStorage.getItem("sadCaptchaKey");
+        let apiKey = true;
         if (apiKey) {
-            return apiKey;
+            return "925d4ebe0258d96923994633efe2361f";
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -37,6 +37,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     let creditsUrl = "https://www.sadcaptcha.com/api/v1/license/credits?licenseKey=";
     let imageCrawlUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-crawl?licenseKey=";
     let puzzleUrl = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey=";
+    let imageDragUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-drag?licenseKey=";
     const API_HEADERS = new Headers({ "Content-Type": "application/json" });
     const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = ".DfwepB";
     const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#puzzleImgComponent";
@@ -47,6 +48,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     const PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]";
     const PUZZLE_PIECE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=true]";
     const PUZZLE_UNIQUE_IDENTIFIERS = ["aside[aria-modal=true]"];
+    const IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas";
+    const IMAGE_DRAG_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA img";
+    const IMAGE_DRAG_UNIQUE_IDENTIFIERS = ["#NEW_CAPTCHA canvas"];
     const CAPTCHA_PRESENCE_INDICATORS = [
         "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]",
         "#NEW_CAPTCHA",
@@ -57,6 +61,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         CaptchaType[CaptchaType["PUZZLE"] = 0] = "PUZZLE";
         CaptchaType[CaptchaType["IMAGE_CRAWL"] = 1] = "IMAGE_CRAWL";
         CaptchaType[CaptchaType["SEMANTIC_SHAPES"] = 2] = "SEMANTIC_SHAPES";
+        CaptchaType[CaptchaType["IMAGE_DRAG"] = 3] = "IMAGE_DRAG";
     })(CaptchaType || (CaptchaType = {}));
     function findFirstElementToAppear(selectors) {
         return new Promise(resolve => {
@@ -171,6 +176,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             return slideXProportion;
         });
     }
+    function imageDragApiCall(puzzleB64, pieceB64) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let resp = yield apiCall(imageDragUrl, {
+                puzzleImageB64: puzzleB64,
+                pieceImageB64: pieceB64
+            });
+            let j = yield resp.json();
+            console.log("image drag response: " + j);
+            return j;
+        });
+    }
     function anySelectorInListPresent(selectors) {
         for (const selector of selectors) {
             let ele = document.querySelector(selector);
@@ -201,6 +217,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 else if (anySelectorInListPresent(PUZZLE_UNIQUE_IDENTIFIERS)) {
                     console.log("puzzle detected");
                     return CaptchaType.PUZZLE;
+                }
+                else if (anySelectorInListPresent(IMAGE_DRAG_UNIQUE_IDENTIFIERS)) {
+                    console.log("image drag detected");
+                    return CaptchaType.IMAGE_DRAG;
                 }
                 else {
                     yield new Promise(r => setTimeout(r, 1000));
@@ -615,6 +635,35 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             yield new Promise(r => setTimeout(r, 3000));
         });
     }
+    function solveImageDrag() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let pieceImageEle = yield waitForElement(IMAGE_DRAG_PIECE_IMAGE_SELECTOR);
+            let puzzleImageEle = yield waitForElement(IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR);
+            let pieceImageSrc = yield getImageSource(IMAGE_DRAG_PIECE_IMAGE_SELECTOR);
+            let puzzleImageSrc = puzzleImageEle.toDataURL();
+            let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc);
+            let pieceImg = getBase64StringFromDataURL(pieceImageSrc);
+            let startPoint = getElementCenter(pieceImageEle);
+            console.log("got start point for image drag piece element: " + startPoint);
+            yield mouseApproach(startPoint.x, startPoint.y);
+            // Call the API and determine loc in viewport to release piece
+            let apiResp = yield imageDragApiCall(puzzleImg, pieceImg);
+            let bbox = puzzleImageEle.getBoundingClientRect();
+            let answerX = bbox.x + (apiResp.proportionalPoints[0].proportionX * bbox.width);
+            let answerY = bbox.y + (apiResp.proportionalPoints[0].proportionY * bbox.width);
+            console.log("got API response for image drag");
+            // Press down after a natural delay
+            yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
+            mouseDown(startPoint.x, startPoint.y);
+            console.log("started drag");
+            // Lift the mouse up at the correct location
+            yield moveMouseTo(answerX, answerY);
+            console.log("moved mouse to answer");
+            yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
+            mouseUp(answerX, answerY);
+            console.log("lifting mouse");
+        });
+    }
     function captchaIsPresent() {
         for (let i = 0; i < CAPTCHA_PRESENCE_INDICATORS.length; i++) {
             if (document.querySelector(CAPTCHA_PRESENCE_INDICATORS[i])) {
@@ -663,6 +712,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                     switch (captchaType) {
                         case CaptchaType.PUZZLE:
                             yield solvePuzzle();
+                            break;
+                        case CaptchaType.IMAGE_DRAG:
+                            yield solveImageDrag();
                             break;
                         case CaptchaType.IMAGE_CRAWL:
                             yield solveImageCrawl();

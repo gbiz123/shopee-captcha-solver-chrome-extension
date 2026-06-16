@@ -36,6 +36,7 @@ interface Request {
 	let creditsUrl = "https://www.sadcaptcha.com/api/v1/license/credits?licenseKey="
 	let imageCrawlUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-crawl?licenseKey="
 	let puzzleUrl = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey="
+	let imageDragUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-drag?licenseKey="
 
 	const API_HEADERS = new Headers({ "Content-Type": "application/json" })
 
@@ -49,6 +50,11 @@ interface Request {
 	const PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]"
 	const PUZZLE_PIECE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=true]"
 	const PUZZLE_UNIQUE_IDENTIFIERS = ["aside[aria-modal=true]"]
+
+	const IMAGE_DRAG_VERIFY_BUTTON_SELECTOR = ".rb6XLo, #NEW_CAPTCHA button:not(:has(*))"
+	const IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas"
+	const IMAGE_DRAG_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA img"
+	const IMAGE_DRAG_UNIQUE_IDENTIFIERS = ["#NEW_CAPTCHA canvas"]
 	
 	const CAPTCHA_PRESENCE_INDICATORS = [
 		"aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]", 
@@ -87,10 +93,15 @@ interface Request {
 		slide_piece_trajectory: Array<TrajectoryElement>
 	}
 
+	type MultiPointResponse = {
+		proportionalPoints: Array<ProportionalPoint>
+	}
+
 	enum CaptchaType {
 		PUZZLE,
 		IMAGE_CRAWL,
-		SEMANTIC_SHAPES
+		SEMANTIC_SHAPES,
+		IMAGE_DRAG
 	}
 
 	function findFirstElementToAppear(selectors: Array<string>): Promise<Element> {
@@ -201,6 +212,16 @@ interface Request {
 		return slideXProportion
 	}
 
+	async function imageDragApiCall(puzzleB64: string, pieceB64: string): Promise<MultiPointResponse> {
+		let resp = await apiCall(imageDragUrl, {
+			puzzleImageB64: puzzleB64,
+			pieceImageB64: pieceB64
+		})
+		let j = await resp.json()
+		console.log("image drag response: " + j)
+		return j
+	}
+
 	function anySelectorInListPresent(selectors: Array<string>): boolean {
 		for (const selector of selectors) {
 			let ele = document.querySelector(selector)
@@ -230,6 +251,9 @@ interface Request {
 			} else if (anySelectorInListPresent(PUZZLE_UNIQUE_IDENTIFIERS)) {
 				console.log("puzzle detected")
 				return CaptchaType.PUZZLE
+			} else if (anySelectorInListPresent(IMAGE_DRAG_UNIQUE_IDENTIFIERS)) {
+				console.log("image drag detected")
+				return CaptchaType.IMAGE_DRAG
 			} else {
 				await new Promise(r => setTimeout(r, 1000));
 			}
@@ -707,6 +731,44 @@ interface Request {
 		await new Promise(r => setTimeout(r, 3000));
 	}
 
+	async function solveImageDrag(): Promise<void> {
+		let pieceImageEle = await waitForElement(IMAGE_DRAG_PIECE_IMAGE_SELECTOR)
+		let puzzleImageEle = await waitForElement(IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
+		let pieceImageSrc = await getImageSource(IMAGE_DRAG_PIECE_IMAGE_SELECTOR)
+		let puzzleImageSrc = puzzleImageEle.toDataURL()
+		let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc)
+		let pieceImg = getBase64StringFromDataURL(pieceImageSrc)
+
+		
+		let startPoint = getElementCenter(pieceImageEle)
+		console.log("got start point for image drag piece element: " + startPoint)
+
+		await mouseApproach(startPoint.x, startPoint.y)
+
+		// Call the API and determine loc in viewport to release piece
+		let apiResp = await imageDragApiCall(puzzleImg, pieceImg)
+		let bbox = puzzleImageEle.getBoundingClientRect()
+		let answerX = bbox.x + (apiResp.proportionalPoints[0].proportionX * bbox.width)
+		let answerY = bbox.y + (apiResp.proportionalPoints[0].proportionY * bbox.width)
+		console.log("got API response for image drag")
+		
+		// Press down after a natural delay
+		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
+		mouseDown(startPoint.x, startPoint.y)
+		console.log("started drag")
+
+		// Lift the mouse up at the correct location
+		await moveMouseTo(answerX, answerY)
+		console.log("moved mouse to answer")
+
+		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
+		mouseUp(answerX, answerY)
+		console.log("lifting mouse")
+
+		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
+		clickElement(IMAGE_DRAG_VERIFY_BUTTON_SELECTOR)
+	}
+
 	function captchaIsPresent(): boolean {
 		for (let i = 0; i < CAPTCHA_PRESENCE_INDICATORS.length; i++) {
 			if (document.querySelector(CAPTCHA_PRESENCE_INDICATORS[i])) {
@@ -757,6 +819,9 @@ interface Request {
 				switch (captchaType) {
 					case CaptchaType.PUZZLE:
 						await solvePuzzle()
+						break
+					case CaptchaType.IMAGE_DRAG:
+						await solveImageDrag()
 						break
 					case CaptchaType.IMAGE_CRAWL:
 						await solveImageCrawl()
