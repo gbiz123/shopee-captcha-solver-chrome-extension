@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = true;
+        let apiKey = localStorage.getItem("sadCaptchaKey");
         if (apiKey) {
-            return "925d4ebe0258d96923994633efe2361f";
+            return apiKey;
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -679,6 +679,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
             clickElement(IMAGE_DRAG_VERIFY_BUTTON_SELECTOR);
             console.log("clicked verify button");
+            // wait before continuing to avoid excessive solving
+            yield new Promise(r => setTimeout(r, 5000));
         });
     }
     function captchaIsPresent() {
