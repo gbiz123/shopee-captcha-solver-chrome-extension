@@ -40,11 +40,11 @@ interface Request {
 
 	const API_HEADERS = new Headers({ "Content-Type": "application/json" })
 
-	const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = ".DfwepB"
-	const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#puzzleImgComponent"
-	const IMAGE_CRAWL_BUTTON_SELECTOR = "#sliderContainer > div > div"
-	const IMAGE_CRAWL_RESET_BUTTON = "button.XAny99"
-	const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR, IMAGE_CRAWL_PIECE_IMAGE_SELECTOR]
+	const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=false]"
+	const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=true]"
+	const IMAGE_CRAWL_BUTTON_SELECTOR = "div:has(> svg + svg)"
+	const IMAGE_CRAWL_RESET_BUTTON = "#NEW_CAPTCHA svg[viewBox='0 0 16 16']"
+	const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PIECE_IMAGE_SELECTOR, IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR]
 
 	const PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]"
 	const PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]"
@@ -54,12 +54,14 @@ interface Request {
 	const IMAGE_DRAG_VERIFY_BUTTON_SELECTOR = ".rb6XLo, #NEW_CAPTCHA button:not(:has(*))"
 	const IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas"
 	const IMAGE_DRAG_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA img"
-	const IMAGE_DRAG_UNIQUE_IDENTIFIERS = ["#NEW_CAPTCHA canvas"]
+	const IMAGE_DRAG_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PIECE_IMAGE_SELECTOR]
 	
 	const CAPTCHA_PRESENCE_INDICATORS = [
 		"aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]", 
 		"#NEW_CAPTCHA",
-		"#captchaMask"
+		"#captchaMask",
+		IMAGE_CRAWL_PIECE_IMAGE_SELECTOR,
+		IMAGE_CRAWL_RESET_BUTTON
 	]
 
 	type Point = {
@@ -446,9 +448,10 @@ interface Request {
 
 	async function refreshImageCrawl() {
 		await new Promise(r => setTimeout(r, 1000));
-		let puzzleImageSrcOriginal = await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
+		let puzzleImageSrcOriginal = (document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement).toDataURL()
 		clickElement(IMAGE_CRAWL_RESET_BUTTON)
-		while (await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) === puzzleImageSrcOriginal) {
+		while (
+			(document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement).toDataURL() === puzzleImageSrcOriginal) {
 			console.log("waiting for refresh...")
 			await new Promise(r => setTimeout(r, 100));
 			continue
@@ -525,10 +528,11 @@ interface Request {
 		mouseEnterPage()
 		await refreshImageCrawl()
 		await new Promise(r => setTimeout(r, 500));
-		let puzzleImageSrc = await getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)
-		let pieceImageSrc = await getImageSource(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR)
-		let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc)
-		let pieceImg = getBase64StringFromDataURL(pieceImageSrc)
+
+		let puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
+		let pieceImageEle = await waitForElement(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR) as HTMLCanvasElement
+		let puzzleImg = getBase64StringFromDataURL(puzzleImageEle.toDataURL())
+		let pieceImg = getBase64StringFromDataURL(pieceImageEle.toDataURL())
 		let slideButtonEle = document.querySelector(IMAGE_CRAWL_BUTTON_SELECTOR) as Element
 		const startX = getElementCenter(slideButtonEle).x
 		const startY = getElementCenter(slideButtonEle).y

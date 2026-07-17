@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = localStorage.getItem("sadCaptchaKey");
+        let apiKey = true;
         if (apiKey) {
-            return apiKey;
+            return "925d4ebe0258d96923994633efe2361f";
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -39,11 +39,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     let puzzleUrl = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey=";
     let imageDragUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-drag?licenseKey=";
     const API_HEADERS = new Headers({ "Content-Type": "application/json" });
-    const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = ".DfwepB";
-    const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#puzzleImgComponent";
-    const IMAGE_CRAWL_BUTTON_SELECTOR = "#sliderContainer > div > div";
-    const IMAGE_CRAWL_RESET_BUTTON = "button.XAny99";
-    const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR, IMAGE_CRAWL_PIECE_IMAGE_SELECTOR];
+    const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=false]";
+    const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=true]";
+    const IMAGE_CRAWL_BUTTON_SELECTOR = "div:has(> svg + svg)";
+    const IMAGE_CRAWL_RESET_BUTTON = "#NEW_CAPTCHA svg[viewBox='0 0 16 16']";
+    const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PIECE_IMAGE_SELECTOR, IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR];
     const PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]";
     const PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]";
     const PUZZLE_PIECE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=true]";
@@ -51,11 +51,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     const IMAGE_DRAG_VERIFY_BUTTON_SELECTOR = ".rb6XLo, #NEW_CAPTCHA button:not(:has(*))";
     const IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas";
     const IMAGE_DRAG_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA img";
-    const IMAGE_DRAG_UNIQUE_IDENTIFIERS = ["#NEW_CAPTCHA canvas"];
+    const IMAGE_DRAG_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PIECE_IMAGE_SELECTOR];
     const CAPTCHA_PRESENCE_INDICATORS = [
         "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]",
         "#NEW_CAPTCHA",
-        "#captchaMask"
+        "#captchaMask",
+        IMAGE_CRAWL_PIECE_IMAGE_SELECTOR,
+        IMAGE_CRAWL_RESET_BUTTON
     ];
     let CaptchaType;
     (function (CaptchaType) {
@@ -391,9 +393,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     function refreshImageCrawl() {
         return __awaiter(this, void 0, void 0, function* () {
             yield new Promise(r => setTimeout(r, 1000));
-            let puzzleImageSrcOriginal = yield getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
+            let puzzleImageSrcOriginal = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR).toDataURL();
             clickElement(IMAGE_CRAWL_RESET_BUTTON);
-            while ((yield getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)) === puzzleImageSrcOriginal) {
+            while (document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR).toDataURL() === puzzleImageSrcOriginal) {
                 console.log("waiting for refresh...");
                 yield new Promise(r => setTimeout(r, 100));
                 continue;
@@ -457,10 +459,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             mouseEnterPage();
             yield refreshImageCrawl();
             yield new Promise(r => setTimeout(r, 500));
-            let puzzleImageSrc = yield getImageSource(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
-            let pieceImageSrc = yield getImageSource(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR);
-            let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc);
-            let pieceImg = getBase64StringFromDataURL(pieceImageSrc);
+            let puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
+            let pieceImageEle = yield waitForElement(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR);
+            let puzzleImg = getBase64StringFromDataURL(puzzleImageEle.toDataURL());
+            let pieceImg = getBase64StringFromDataURL(pieceImageEle.toDataURL());
             let slideButtonEle = document.querySelector(IMAGE_CRAWL_BUTTON_SELECTOR);
             const startX = getElementCenter(slideButtonEle).x;
             const startY = getElementCenter(slideButtonEle).y;
