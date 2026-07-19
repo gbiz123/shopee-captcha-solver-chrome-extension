@@ -51,7 +51,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     const IMAGE_DRAG_VERIFY_BUTTON_SELECTOR = ".rb6XLo, #NEW_CAPTCHA button:not(:has(*))";
     const IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas";
     const IMAGE_DRAG_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA img";
-    const IMAGE_DRAG_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PIECE_IMAGE_SELECTOR];
+    const IMAGE_DRAG_UNIQUE_IDENTIFIERS = [IMAGE_DRAG_PIECE_IMAGE_SELECTOR, IMAGE_DRAG_VERIFY_BUTTON_SELECTOR];
     const CAPTCHA_PRESENCE_INDICATORS = [
         "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]",
         "#NEW_CAPTCHA",
