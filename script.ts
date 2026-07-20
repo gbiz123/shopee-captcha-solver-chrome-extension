@@ -40,10 +40,10 @@ interface Request {
 
 	const API_HEADERS = new Headers({ "Content-Type": "application/json" })
 
-	const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=false]"
-	const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=true]"
+	const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=false], aside canvas[draggable=false]"
+	const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=true], aside canvas[draggable=true]"
 	const IMAGE_CRAWL_BUTTON_SELECTOR = "div:has(> svg + svg)"
-	const IMAGE_CRAWL_RESET_BUTTON = "#NEW_CAPTCHA svg[viewBox='0 0 16 16']"
+	const IMAGE_CRAWL_RESET_BUTTON = "#NEW_CAPTCHA svg[viewBox='0 0 16 16'], aside svg[viewBox='0 0 16 16']"
 	const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PIECE_IMAGE_SELECTOR, IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR]
 
 	const PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]"
@@ -51,9 +51,9 @@ interface Request {
 	const PUZZLE_PIECE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=true]"
 	const PUZZLE_UNIQUE_IDENTIFIERS = ["aside[aria-modal=true]"]
 
-	const IMAGE_DRAG_VERIFY_BUTTON_SELECTOR = ".rb6XLo, #NEW_CAPTCHA button:not(:has(*))"
-	const IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas"
-	const IMAGE_DRAG_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA img"
+	const IMAGE_DRAG_VERIFY_BUTTON_SELECTOR = ".rb6XLo, #NEW_CAPTCHA button:not(:has(*)), aside button:not(:has(*)) "
+	const IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas, aside canvas"
+	const IMAGE_DRAG_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA img, aside img"
 	const IMAGE_DRAG_UNIQUE_IDENTIFIERS = [IMAGE_DRAG_PIECE_IMAGE_SELECTOR, IMAGE_DRAG_VERIFY_BUTTON_SELECTOR]
 	
 	const CAPTCHA_PRESENCE_INDICATORS = [
@@ -61,6 +61,7 @@ interface Request {
 		"#NEW_CAPTCHA",
 		"#captchaMask",
 		IMAGE_CRAWL_PIECE_IMAGE_SELECTOR,
+		IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR,
 		IMAGE_CRAWL_RESET_BUTTON
 	]
 
