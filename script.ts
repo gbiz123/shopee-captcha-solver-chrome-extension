@@ -35,6 +35,7 @@ interface Request {
 
 	let creditsUrl = "https://www.sadcaptcha.com/api/v1/license/credits?licenseKey="
 	let imageCrawlUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-crawl?licenseKey="
+	let imageCrawlPreAnalyzeUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-crawl-pre-analyze?licenseKey="
 	let puzzleUrl = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey="
 	let imageDragUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-drag?licenseKey="
 
@@ -64,6 +65,15 @@ interface Request {
 		IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR,
 		IMAGE_CRAWL_RESET_BUTTON
 	]
+
+	type SingleImageRequest = {
+		image_b64: string
+	}
+
+	type ImageCrawlPreAnalyzeResponse = {
+		version: string,
+		slideXProportion: number
+	}
 
 	type Point = {
 		x: number
@@ -198,6 +208,15 @@ interface Request {
 		return resp
 	}
 
+	async function imageCrawlPreAnalyzeApiCall(requestBody: SingleImageRequest):
+			Promise<ImageCrawlPreAnalyzeResponse> {
+		let resp = await apiCall(imageCrawlPreAnalyzeUrl, requestBody)
+		let result = await resp.json()
+		console.log("image crawl pre-analyze result: ")
+		console.log(result)
+		return result
+	}
+
 	async function imageCrawlApiCall(requestBody: ImageCrawlCaptchaRequest): Promise<number> {
 		let resp = await apiCall(imageCrawlUrl, requestBody)
 		let pixelsFromSliderOrigin = (await resp.json()).pixelsFromSliderOrigin
@@ -300,7 +319,6 @@ interface Request {
 				clientY: y
 			})
 		)
-		console.log("mouse over at " + x + ", " + y)
 	}
 
 	function mouseOut(x: number, y: number): void {
@@ -314,7 +332,6 @@ interface Request {
 				clientY: y
 			})
 		)
-		console.log("mouse over at " + x + ", " + y)
 	}
 
 	function mouseDown(x: number, y: number): void {
@@ -421,7 +438,6 @@ interface Request {
 				clientY: y
 			})
 		)
-		console.log("moved mouse to " + x + ", " + y)
 	}
 
 	function getElementCenter(element: Element): Point {
@@ -498,7 +514,6 @@ interface Request {
 				clientY: y
 			})
 		)
-		console.log("moved mouse to " + x + ", " + y)
 	}
 
 	async function mouseApproach(x: number, y: number): Promise<void> {
@@ -544,12 +559,24 @@ interface Request {
 		// Press down after a natural delay
 		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
 
-		let trajectory = await getSlidePieceTrajectory(slideButtonEle, puzzleEle)
-		let solution = await imageCrawlApiCall({
+		// Pre-analyze to determine the max distance to drag the slider
+		let imageCrawlInfo = await imageCrawlPreAnalyzeApiCall(
+			{image_b64: puzzleImg}
+		)
+
+		let trajectory = await getSlidePieceTrajectory(
+			slideButtonEle,
+			puzzleEle,
+			imageCrawlInfo.slideXProportion
+		)
+		let request = {
 			piece_image_b64: pieceImg,
 			puzzle_image_b64: puzzleImg,
 			slide_piece_trajectory: trajectory
-		})
+		}
+		console.log("image crawl request:")
+		console.log(JSON.stringify(request))
+		let solution = await imageCrawlApiCall(request)
 		let currentX = getElementCenter(slideButtonEle).x
 		let currentY = getElementCenter(slideButtonEle).y
 		let solutionDistanceBackwards = currentX - startX - solution
@@ -582,7 +609,16 @@ interface Request {
 		// await new Promise(r => setTimeout(r, 3000));
 	}
 
-	async function getSlidePieceTrajectory(slideButton: Element, puzzle: Element): Promise<Array<TrajectoryElement>> {
+	/*
+		* @param slideButton: Element containing the slide button that the user drage
+	 	* @param puzzle: Element containing the puzzle itself
+		* @param maxProportionX: The maximum distance to drag the piece expressed as ratio
+	*/
+	async function getSlidePieceTrajectory(
+			slideButton: Element,
+			puzzle: Element,
+			maxProportionX: number
+	): Promise<Array<TrajectoryElement>> {
 		let sliderPieceContainer = document.querySelector(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR) as Element
 		console.log("got slider piece container")
 		let slideBarWidth = getElementWidth(puzzle)
@@ -635,6 +671,14 @@ interface Request {
 				puzzleImageBoundingBox,
 				sliderPieceContainer
 			)
+
+			// Break the loop if we have surpassed the 
+			// max slide x proportion from pre-analysis
+			if (trajectoryElement.piece_center.proportionX >= maxProportionX) {
+				console.log("piece center has surpassed max proportion X from pre-analysis, breaking loop now")
+				break
+			}
+
 			trajectory.push(trajectoryElement)
 			if (trajectory.length < 100 / mouseStep)
 				continue
@@ -644,8 +688,6 @@ interface Request {
 				timesPieceDidNotMove = 0
 			if (timesPieceDidNotMove >= 10 / mouseStep)
 				break
-			console.log("trajectory element:")
-			console.dir(trajectoryElement)
 		}
 		return trajectory
 	}

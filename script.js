@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = localStorage.getItem("sadCaptchaKey");
+        let apiKey = true;
         if (apiKey) {
-            return apiKey;
+            return "925d4ebe0258d96923994633efe2361f";
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -36,6 +36,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     }
     let creditsUrl = "https://www.sadcaptcha.com/api/v1/license/credits?licenseKey=";
     let imageCrawlUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-crawl?licenseKey=";
+    let imageCrawlPreAnalyzeUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-crawl-pre-analyze?licenseKey=";
     let puzzleUrl = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey=";
     let imageDragUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-drag?licenseKey=";
     const API_HEADERS = new Headers({ "Content-Type": "application/json" });
@@ -161,6 +162,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             return resp;
         });
     }
+    function imageCrawlPreAnalyzeApiCall(requestBody) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let resp = yield apiCall(imageCrawlPreAnalyzeUrl, requestBody);
+            let result = yield resp.json();
+            console.log("image crawl pre-analyze result: ");
+            console.log(result);
+            return result;
+        });
+    }
     function imageCrawlApiCall(requestBody) {
         return __awaiter(this, void 0, void 0, function* () {
             let resp = yield apiCall(imageCrawlUrl, requestBody);
@@ -264,7 +274,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             clientX: x,
             clientY: y
         }));
-        console.log("mouse over at " + x + ", " + y);
     }
     function mouseOut(x, y) {
         let underMouse = document.elementFromPoint(x, y);
@@ -275,7 +284,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             clientX: x,
             clientY: y
         }));
-        console.log("mouse over at " + x + ", " + y);
     }
     function mouseDown(x, y) {
         let underMouse = document.elementFromPoint(x, y);
@@ -369,7 +377,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             clientX: x,
             clientY: y
         }));
-        console.log("moved mouse to " + x + ", " + y);
     }
     function getElementCenter(element) {
         let rect = element.getBoundingClientRect();
@@ -436,7 +443,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 clientX: x,
                 clientY: y
             }));
-            console.log("moved mouse to " + x + ", " + y);
         });
     }
     function mouseApproach(x, y) {
@@ -471,12 +477,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             mouseApproach(startX, startY);
             // Press down after a natural delay
             yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
-            let trajectory = yield getSlidePieceTrajectory(slideButtonEle, puzzleEle);
-            let solution = yield imageCrawlApiCall({
+            // Pre-analyze to determine the max distance to drag the slider
+            let imageCrawlInfo = yield imageCrawlPreAnalyzeApiCall({ image_b64: puzzleImg });
+            let trajectory = yield getSlidePieceTrajectory(slideButtonEle, puzzleEle, imageCrawlInfo.slideXProportion);
+            let request = {
                 piece_image_b64: pieceImg,
                 puzzle_image_b64: puzzleImg,
                 slide_piece_trajectory: trajectory
-            });
+            };
+            console.log("image crawl request:");
+            console.log(JSON.stringify(request));
+            let solution = yield imageCrawlApiCall(request);
             let currentX = getElementCenter(slideButtonEle).x;
             let currentY = getElementCenter(slideButtonEle).y;
             let solutionDistanceBackwards = currentX - startX - solution;
@@ -503,7 +514,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             // await new Promise(r => setTimeout(r, 3000));
         });
     }
-    function getSlidePieceTrajectory(slideButton, puzzle) {
+    /*
+        * @param slideButton: Element containing the slide button that the user drage
+        * @param puzzle: Element containing the puzzle itself
+        * @param maxProportionX: The maximum distance to drag the piece expressed as ratio
+    */
+    function getSlidePieceTrajectory(slideButton, puzzle, maxProportionX) {
         return __awaiter(this, void 0, void 0, function* () {
             let sliderPieceContainer = document.querySelector(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR);
             console.log("got slider piece container");
@@ -547,6 +563,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 }));
                 yield new Promise(r => setTimeout(r, 10));
                 let trajectoryElement = getTrajectoryElement(pixel, puzzleImageBoundingBox, sliderPieceContainer);
+                // Break the loop if we have surpassed the 
+                // max slide x proportion from pre-analysis
+                if (trajectoryElement.piece_center.proportionX >= maxProportionX) {
+                    console.log("piece center has surpassed max proportion X from pre-analysis, breaking loop now");
+                    break;
+                }
                 trajectory.push(trajectoryElement);
                 if (trajectory.length < 100 / mouseStep)
                     continue;
@@ -556,8 +578,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                     timesPieceDidNotMove = 0;
                 if (timesPieceDidNotMove >= 10 / mouseStep)
                     break;
-                console.log("trajectory element:");
-                console.dir(trajectoryElement);
             }
             return trajectory;
         });
