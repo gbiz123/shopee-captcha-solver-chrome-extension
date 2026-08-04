@@ -464,11 +464,36 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     function solveImageCrawl() {
         return __awaiter(this, void 0, void 0, function* () {
             mouseEnterPage();
-            yield refreshImageCrawl();
-            yield new Promise(r => setTimeout(r, 500));
             let puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
-            let pieceImageEle = yield waitForElement(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR);
             let puzzleImg = getBase64StringFromDataURL(puzzleImageEle.toDataURL());
+            let imageCrawlInfo = {
+                version: "na",
+                slideXProportion: 0.9,
+                skipRecommended: true
+            };
+            // The pre-analyze API on the sadcaptcha side 
+            // recommends whether or not we should skip this one.
+            // Try until skipRecommended = false
+            for (let i = 0; i < 5; i++) {
+                yield refreshImageCrawl();
+                yield new Promise(r => setTimeout(r, 500));
+                puzzleImageEle = (yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR));
+                puzzleImg = getBase64StringFromDataURL(puzzleImageEle.toDataURL());
+                // Pre-analyze to determine the max distance to drag the slider
+                imageCrawlInfo = yield imageCrawlPreAnalyzeApiCall({ image_b64: puzzleImg });
+                if (imageCrawlInfo.skipRecommended) {
+                    console.log("skip is recommended, refreshing captcha and checking for a better one");
+                    continue;
+                }
+                else {
+                    console.log("skip is not recommended, proceeding to solve the current captcha");
+                    break;
+                }
+            }
+            if (imageCrawlInfo === undefined) {
+                throw new Error("imageCrawlInfo was never initialized");
+            }
+            let pieceImageEle = yield waitForElement(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR);
             let pieceImg = getBase64StringFromDataURL(pieceImageEle.toDataURL());
             let slideButtonEle = document.querySelector(IMAGE_CRAWL_BUTTON_SELECTOR);
             const startX = getElementCenter(slideButtonEle).x;
@@ -477,8 +502,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             mouseApproach(startX, startY);
             // Press down after a natural delay
             yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
-            // Pre-analyze to determine the max distance to drag the slider
-            let imageCrawlInfo = yield imageCrawlPreAnalyzeApiCall({ image_b64: puzzleImg });
             let trajectory = yield getSlidePieceTrajectory(slideButtonEle, puzzleEle, imageCrawlInfo.slideXProportion);
             let request = {
                 piece_image_b64: pieceImg,
