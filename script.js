@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = localStorage.getItem("sadCaptchaKey");
+        let apiKey = true;
         if (apiKey) {
-            return apiKey;
+            return "925d4ebe0258d96923994633efe2361f";
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -40,11 +40,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     let puzzleUrl = "https://www.sadcaptcha.com/api/v1/puzzle?licenseKey=";
     let imageDragUrl = "https://www.sadcaptcha.com/api/v1/shopee-image-drag?licenseKey=";
     const API_HEADERS = new Headers({ "Content-Type": "application/json" });
-    const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=false], aside canvas[draggable=false]";
-    const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=true], aside canvas[draggable=true]";
+    const IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=false], aside canvas[draggable=false], div:not(#puzzleContainer) > img";
+    const IMAGE_CRAWL_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas[draggable=true], aside canvas[draggable=true], #puzzleContainer > #puzzleImgComponent";
     const IMAGE_CRAWL_BUTTON_SELECTOR = "div:has(> svg + svg)";
     const IMAGE_CRAWL_RESET_BUTTON = "#NEW_CAPTCHA svg[viewBox='0 0 16 16'], aside svg[viewBox='0 0 16 16']";
-    const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PIECE_IMAGE_SELECTOR, IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR];
+    const IMAGE_CRAWL_UNIQUE_IDENTIFIERS = [IMAGE_CRAWL_PIECE_IMAGE_SELECTOR];
     const PUZZLE_BUTTON_SELECTOR = "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]";
     const PUZZLE_PUZZLE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=false]";
     const PUZZLE_PIECE_IMAGE_SELECTOR = "aside[aria-modal=true] div[aria-hidden=true] > div > div > img[draggable=true]";
@@ -52,7 +52,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     const IMAGE_DRAG_VERIFY_BUTTON_SELECTOR = ".rb6XLo, #NEW_CAPTCHA button:not(:has(*)), aside button:not(:has(*)) ";
     const IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR = "#NEW_CAPTCHA canvas, aside canvas";
     const IMAGE_DRAG_PIECE_IMAGE_SELECTOR = "#NEW_CAPTCHA img, aside img";
-    const IMAGE_DRAG_UNIQUE_IDENTIFIERS = [IMAGE_DRAG_PIECE_IMAGE_SELECTOR, IMAGE_DRAG_VERIFY_BUTTON_SELECTOR];
+    const IMAGE_DRAG_UNIQUE_IDENTIFIERS = [IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR, IMAGE_DRAG_VERIFY_BUTTON_SELECTOR];
     const CAPTCHA_PRESENCE_INDICATORS = [
         "aside[aria-modal=true] div[style=\"width: 40px; height: 40px; transform: translateX(0px);\"]",
         "#NEW_CAPTCHA",
