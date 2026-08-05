@@ -128,25 +128,36 @@ interface Request {
 				mutation.addedNodes.forEach(node => addedNode.push(node))
 				for (const node of addedNode)
 					for (const selector of selectors) {
-						if (node instanceof HTMLIFrameElement) {
-							let iframe = <HTMLIFrameElement>node 
-							setTimeout(() => {
-								let iframeElement = iframe.contentWindow!.document.body.querySelector(selector)
-								if (iframeElement) {
-									console.debug(`element matched ${selector} in iframe`)
-									observer.disconnect()
-									console.dir(iframeElement)
-									return  resolve(iframeElement)
-								} 
-							}, 3000)
-						} else if (node instanceof Element) {
-							let element = <Element>node
-							if (element.querySelector(selector)) {
-								console.debug(`element matched ${selector}`)
-								observer.disconnect()
-								console.dir(element)
-								return resolve(element)
+						try {
+							if (node instanceof HTMLIFrameElement) {
+								let iframe = <HTMLIFrameElement>node 
+								setTimeout(() => {
+									if (iframe.contentWindow) {
+										let iframeElement = iframe.contentWindow!.document.body.querySelector(selector)
+										if (iframeElement) {
+											console.debug(`element matched ${selector} in iframe`)
+											observer.disconnect()
+											console.dir(iframeElement)
+											return resolve(iframeElement)
+										}
+									} else {
+										console.log(`no iframe with selector ${selector}, contentWindow was null`)
+									}
+								}, 3000)
 							}
+
+							if (node instanceof Element) {
+								let element = <Element>node
+								if (element.querySelector(selector)) {
+									console.debug(`element matched ${selector}`)
+									observer.disconnect()
+									console.dir(element)
+									return resolve(element)
+								}
+							}
+						} catch (err) {
+							console.log(`error occurred when finding element with css selector ${selector}, error was: ` + err)
+							console.log("trying again")
 						}
 					}
 				}
@@ -159,31 +170,40 @@ interface Request {
 	}
 
 	function waitForElement(selector: string, iframeSelector?: string): Promise<Element> {
-		return new Promise(resolve => {
-			let targetDocument: Document;
-			if (iframeSelector !== undefined) {
-				let iframe = document.querySelector(iframeSelector) as HTMLIFrameElement
-				targetDocument = iframe.contentWindow!.document
-			} else {
-				targetDocument = window.document
-			}
-			if (targetDocument.querySelector(selector)) {
-				console.log("Selector found: " + selector)
-				return resolve(targetDocument.querySelector(selector)!)
-			} else {
-				const observer: MutationObserver = new MutationObserver(_ => {
-					if (targetDocument.querySelector(selector)) {
-						observer.disconnect()
-						console.log("Selector found by mutation observer: " + selector)
-						return resolve(targetDocument.querySelector(selector)!)
+		for (let i = 0; i < 5; i++) {
+			try {
+				return new Promise(resolve => {
+					let targetDocument: Document;
+					if (iframeSelector !== undefined) {
+						let iframe = document.querySelector(iframeSelector) as HTMLIFrameElement
+						targetDocument = iframe.contentWindow!.document
+					} else {
+						targetDocument = window.document
 					}
-				})
-				observer.observe(CONTAINER, {
-					childList: true,
-					subtree: true
-				})
+					if (targetDocument.querySelector(selector)) {
+						console.log("Selector found: " + selector)
+						return resolve(targetDocument.querySelector(selector)!)
+					} else {
+						const observer: MutationObserver = new MutationObserver(_ => {
+							if (targetDocument.querySelector(selector)) {
+								observer.disconnect()
+								console.log("Selector found by mutation observer: " + selector)
+								return resolve(targetDocument.querySelector(selector)!)
+							}
+						})
+						observer.observe(CONTAINER, {
+							childList: true,
+							subtree: true
+						})
+					}
+				}) 
+			} catch (err) {
+				console.log(`error occurred when finding element with css selector ${selector}, error was: ` + err)
+				console.log("trying again")
 			}
-		})
+		}
+
+		throw new Error(`Could not get element ${selector} after 5 tries`)
 	}
 
 	async function creditsApiCall(): Promise<number> {
@@ -255,10 +275,12 @@ interface Request {
 			let iframe = document.querySelector("iframe")
 			if (iframe) {
 				console.log("checking for selector in iframe")
-				ele = iframe.contentWindow!.document.body.querySelector(selector)
-				if (ele) {
-					console.log("Selector is present in iframe: " + selector)
-					return true
+				if (iframe.contentWindow) {
+					ele = iframe.contentWindow.document.body.querySelector(selector)
+					if (ele) {
+						console.log("Selector is present in iframe: " + selector)
+						return true
+					}
 				}
 			}
 		}
@@ -466,10 +488,17 @@ interface Request {
 
 	async function refreshImageCrawl() {
 		await new Promise(r => setTimeout(r, 1000));
-		let puzzleImageSrcOriginal = (document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement).toDataURL()
+		let puzzleImageSrcOriginal = (
+			document.querySelector(
+				IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
+		).toDataURL()
 		clickElement(IMAGE_CRAWL_RESET_BUTTON)
 		while (
-			(document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement).toDataURL() === puzzleImageSrcOriginal) {
+			(
+				document.querySelector(
+					IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement).toDataURL() 
+					=== puzzleImageSrcOriginal
+			) {
 			console.log("waiting for refresh...")
 			await new Promise(r => setTimeout(r, 100));
 			continue

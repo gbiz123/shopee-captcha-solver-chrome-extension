@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = true;
+        let apiKey = localStorage.getItem("sadCaptchaKey");
         if (apiKey) {
-            return "925d4ebe0258d96923994633efe2361f";
+            return apiKey;
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -78,26 +78,37 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                     mutation.addedNodes.forEach(node => addedNode.push(node));
                     for (const node of addedNode)
                         for (const selector of selectors) {
-                            if (node instanceof HTMLIFrameElement) {
-                                let iframe = node;
-                                setTimeout(() => {
-                                    let iframeElement = iframe.contentWindow.document.body.querySelector(selector);
-                                    if (iframeElement) {
-                                        console.debug(`element matched ${selector} in iframe`);
-                                        observer.disconnect();
-                                        console.dir(iframeElement);
-                                        return resolve(iframeElement);
-                                    }
-                                }, 3000);
-                            }
-                            else if (node instanceof Element) {
-                                let element = node;
-                                if (element.querySelector(selector)) {
-                                    console.debug(`element matched ${selector}`);
-                                    observer.disconnect();
-                                    console.dir(element);
-                                    return resolve(element);
+                            try {
+                                if (node instanceof HTMLIFrameElement) {
+                                    let iframe = node;
+                                    setTimeout(() => {
+                                        if (iframe.contentWindow) {
+                                            let iframeElement = iframe.contentWindow.document.body.querySelector(selector);
+                                            if (iframeElement) {
+                                                console.debug(`element matched ${selector} in iframe`);
+                                                observer.disconnect();
+                                                console.dir(iframeElement);
+                                                return resolve(iframeElement);
+                                            }
+                                        }
+                                        else {
+                                            console.log(`no iframe with selector ${selector}, contentWindow was null`);
+                                        }
+                                    }, 3000);
                                 }
+                                if (node instanceof Element) {
+                                    let element = node;
+                                    if (element.querySelector(selector)) {
+                                        console.debug(`element matched ${selector}`);
+                                        observer.disconnect();
+                                        console.dir(element);
+                                        return resolve(element);
+                                    }
+                                }
+                            }
+                            catch (err) {
+                                console.log(`error occurred when finding element with css selector ${selector}, error was: ` + err);
+                                console.log("trying again");
                             }
                         }
                 }
@@ -109,33 +120,42 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         });
     }
     function waitForElement(selector, iframeSelector) {
-        return new Promise(resolve => {
-            let targetDocument;
-            if (iframeSelector !== undefined) {
-                let iframe = document.querySelector(iframeSelector);
-                targetDocument = iframe.contentWindow.document;
-            }
-            else {
-                targetDocument = window.document;
-            }
-            if (targetDocument.querySelector(selector)) {
-                console.log("Selector found: " + selector);
-                return resolve(targetDocument.querySelector(selector));
-            }
-            else {
-                const observer = new MutationObserver(_ => {
+        for (let i = 0; i < 5; i++) {
+            try {
+                return new Promise(resolve => {
+                    let targetDocument;
+                    if (iframeSelector !== undefined) {
+                        let iframe = document.querySelector(iframeSelector);
+                        targetDocument = iframe.contentWindow.document;
+                    }
+                    else {
+                        targetDocument = window.document;
+                    }
                     if (targetDocument.querySelector(selector)) {
-                        observer.disconnect();
-                        console.log("Selector found by mutation observer: " + selector);
+                        console.log("Selector found: " + selector);
                         return resolve(targetDocument.querySelector(selector));
                     }
-                });
-                observer.observe(CONTAINER, {
-                    childList: true,
-                    subtree: true
+                    else {
+                        const observer = new MutationObserver(_ => {
+                            if (targetDocument.querySelector(selector)) {
+                                observer.disconnect();
+                                console.log("Selector found by mutation observer: " + selector);
+                                return resolve(targetDocument.querySelector(selector));
+                            }
+                        });
+                        observer.observe(CONTAINER, {
+                            childList: true,
+                            subtree: true
+                        });
+                    }
                 });
             }
-        });
+            catch (err) {
+                console.log(`error occurred when finding element with css selector ${selector}, error was: ` + err);
+                console.log("trying again");
+            }
+        }
+        throw new Error(`Could not get element ${selector} after 5 tries`);
     }
     function creditsApiCall() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -211,10 +231,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             let iframe = document.querySelector("iframe");
             if (iframe) {
                 console.log("checking for selector in iframe");
-                ele = iframe.contentWindow.document.body.querySelector(selector);
-                if (ele) {
-                    console.log("Selector is present in iframe: " + selector);
-                    return true;
+                if (iframe.contentWindow) {
+                    ele = iframe.contentWindow.document.body.querySelector(selector);
+                    if (ele) {
+                        console.log("Selector is present in iframe: " + selector);
+                        return true;
+                    }
                 }
             }
         }
@@ -403,7 +425,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             yield new Promise(r => setTimeout(r, 1000));
             let puzzleImageSrcOriginal = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR).toDataURL();
             clickElement(IMAGE_CRAWL_RESET_BUTTON);
-            while (document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR).toDataURL() === puzzleImageSrcOriginal) {
+            while (document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR).toDataURL()
+                === puzzleImageSrcOriginal) {
                 console.log("waiting for refresh...");
                 yield new Promise(r => setTimeout(r, 100));
                 continue;
