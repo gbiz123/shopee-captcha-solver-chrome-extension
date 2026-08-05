@@ -488,15 +488,14 @@ interface Request {
 
 	async function refreshImageCrawl() {
 		await new Promise(r => setTimeout(r, 1000));
-		let puzzleImageSrcOriginal = (
+		let puzzleImageSrcOriginal = elementToDataUrl(
 			document.querySelector(
 				IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
-		).toDataURL()
+		)
 		clickElement(IMAGE_CRAWL_RESET_BUTTON)
 		while (
 			(
-				document.querySelector(
-					IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement).toDataURL() 
+				elementToDataUrl(document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement))
 					=== puzzleImageSrcOriginal
 			) {
 			console.log("waiting for refresh...")
@@ -570,10 +569,20 @@ interface Request {
 		);
 	}
 
+	function elementToDataUrl(ele: Element): string {
+		if (ele instanceof HTMLCanvasElement) {
+			return ele.toDataURL()
+		} else if (ele instanceof HTMLImageElement) {
+			return ele.src
+		} else {
+			throw new Error("cannot get data url from non-image or canvas element")
+		}
+	}
+
 	async function solveImageCrawl(): Promise<void> {
 		mouseEnterPage()
 		let puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
-		let puzzleImg = getBase64StringFromDataURL(puzzleImageEle.toDataURL())
+		let puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle))
 		let imageCrawlInfo: ImageCrawlPreAnalyzeResponse = {
 			version: "na",
 			slideXProportion: 0.9,
@@ -588,7 +597,7 @@ interface Request {
 			await new Promise(r => setTimeout(r, 500));
 
 			puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
-			puzzleImg = getBase64StringFromDataURL(puzzleImageEle.toDataURL())
+			puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle))
 
 			// Pre-analyze to determine the max distance to drag the slider
 			imageCrawlInfo = await imageCrawlPreAnalyzeApiCall(
@@ -609,7 +618,7 @@ interface Request {
 		}
 
 		let pieceImageEle = await waitForElement(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR) as HTMLCanvasElement
-		let pieceImg = getBase64StringFromDataURL(pieceImageEle.toDataURL())
+		let pieceImg = getBase64StringFromDataURL(elementToDataUrl(pieceImageEle))
 		let slideButtonEle = document.querySelector(IMAGE_CRAWL_BUTTON_SELECTOR) as Element
 		const startX = getElementCenter(slideButtonEle).x
 		const startY = getElementCenter(slideButtonEle).y
@@ -851,7 +860,7 @@ interface Request {
 		let pieceImageEle = await waitForElement(IMAGE_DRAG_PIECE_IMAGE_SELECTOR)
 		let puzzleImageEle = await waitForElement(IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
 		let pieceImageSrc = await getImageSource(IMAGE_DRAG_PIECE_IMAGE_SELECTOR)
-		let puzzleImageSrc = puzzleImageEle.toDataURL()
+		let puzzleImageSrc = elementToDataUrl(puzzleImageEle)
 		let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc)
 		let pieceImg = getBase64StringFromDataURL(pieceImageSrc)
 

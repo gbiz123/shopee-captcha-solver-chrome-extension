@@ -423,9 +423,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     function refreshImageCrawl() {
         return __awaiter(this, void 0, void 0, function* () {
             yield new Promise(r => setTimeout(r, 1000));
-            let puzzleImageSrcOriginal = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR).toDataURL();
+            let puzzleImageSrcOriginal = elementToDataUrl(document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR));
             clickElement(IMAGE_CRAWL_RESET_BUTTON);
-            while (document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR).toDataURL()
+            while ((elementToDataUrl(document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)))
                 === puzzleImageSrcOriginal) {
                 console.log("waiting for refresh...");
                 yield new Promise(r => setTimeout(r, 100));
@@ -484,11 +484,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             moveMouseTo(x + (Math.random() * 1.5 - 0.75), y + (Math.random() * 1.5 - 0.75));
         });
     }
+    function elementToDataUrl(ele) {
+        if (ele instanceof HTMLCanvasElement) {
+            return ele.toDataURL();
+        }
+        else if (ele instanceof HTMLImageElement) {
+            return ele.src;
+        }
+        else {
+            throw new Error("cannot get data url from non-image or canvas element");
+        }
+    }
     function solveImageCrawl() {
         return __awaiter(this, void 0, void 0, function* () {
             mouseEnterPage();
             let puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
-            let puzzleImg = getBase64StringFromDataURL(puzzleImageEle.toDataURL());
+            let puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle));
             let imageCrawlInfo = {
                 version: "na",
                 slideXProportion: 0.9,
@@ -501,7 +512,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 yield refreshImageCrawl();
                 yield new Promise(r => setTimeout(r, 500));
                 puzzleImageEle = (yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR));
-                puzzleImg = getBase64StringFromDataURL(puzzleImageEle.toDataURL());
+                puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle));
                 // Pre-analyze to determine the max distance to drag the slider
                 imageCrawlInfo = yield imageCrawlPreAnalyzeApiCall({ image_b64: puzzleImg });
                 if (imageCrawlInfo.skipRecommended) {
@@ -517,7 +528,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 throw new Error("imageCrawlInfo was never initialized");
             }
             let pieceImageEle = yield waitForElement(IMAGE_CRAWL_PIECE_IMAGE_SELECTOR);
-            let pieceImg = getBase64StringFromDataURL(pieceImageEle.toDataURL());
+            let pieceImg = getBase64StringFromDataURL(elementToDataUrl(pieceImageEle));
             let slideButtonEle = document.querySelector(IMAGE_CRAWL_BUTTON_SELECTOR);
             const startX = getElementCenter(slideButtonEle).x;
             const startY = getElementCenter(slideButtonEle).y;
@@ -722,7 +733,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             let pieceImageEle = yield waitForElement(IMAGE_DRAG_PIECE_IMAGE_SELECTOR);
             let puzzleImageEle = yield waitForElement(IMAGE_DRAG_PUZZLE_IMAGE_SELECTOR);
             let pieceImageSrc = yield getImageSource(IMAGE_DRAG_PIECE_IMAGE_SELECTOR);
-            let puzzleImageSrc = puzzleImageEle.toDataURL();
+            let puzzleImageSrc = elementToDataUrl(puzzleImageEle);
             let puzzleImg = getBase64StringFromDataURL(puzzleImageSrc);
             let pieceImg = getBase64StringFromDataURL(pieceImageSrc);
             let startPoint = getElementCenter(pieceImageEle);
