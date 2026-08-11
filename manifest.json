@@ -1,16 +1,39 @@
 {
   "manifest_version": 3,
-  "name": "Shopee Captcha Solver",
-  "description": "Automatically bypass any Shopee captcha",
-  "version": "2.91",
+  "name": "sad x captcha",
+  "description": "mysterious extension",
+  "version": "3.0",
   "action": {
     "default_popup": "hello.html",
     "default_icon": "logo_icon_black_bg.png"
   },
+  "permissions": [
+    "debugger",
+    "storage",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": [
+      "background.js"
+    ]
+  },
   "content_scripts": [
     {
       "matches": [
-		"<all_urls>"
+		"*://*.shopee.com/*",
+        "*://*.shopee.tw/*",
+        "*://*.shopee.co.th/*",
+        "*://*.shopee.co.id/*",
+        "*://*.shopee.com.my/*",
+        "*://*.shopee.sg/*",
+        "*://*.shopee.ph/*",
+        "*://*.shopee.vn/*",
+        "*://*.shopee.com.br/*",
+        "*://*.shopee.mx/*",
+        "*://*.shopee.cl/*",
+        "*://*.shopee.co/*",
+        "*://*.shopee.pl/*"
       ],
       "all_frames": false,
       "js": [

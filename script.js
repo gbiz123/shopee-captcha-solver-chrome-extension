@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = true;
+        let apiKey = localStorage.getItem("sadCaptchaKey");
         if (apiKey) {
-            return "925d4ebe0258d96923994633efe2361f";
+            return apiKey;
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -278,90 +278,135 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         console.log("got b64 string from data URL");
         return img;
     }
-    function mouseUp(x, y) {
-        CONTAINER.dispatchEvent(new MouseEvent("mouseup", {
-            bubbles: true,
-            view: window,
-            clientX: x,
-            clientY: y
-        }));
-        console.log("mouse up at " + x + ", " + y);
-    }
-    function mouseOver(x, y) {
-        let underMouse = document.elementFromPoint(x, y);
-        underMouse.dispatchEvent(new MouseEvent("mouseover", {
-            cancelable: true,
-            bubbles: true,
-            view: window,
-            clientX: x,
-            clientY: y
-        }));
-    }
-    function mouseOut(x, y) {
-        let underMouse = document.elementFromPoint(x, y);
-        underMouse.dispatchEvent(new MouseEvent("mouseout", {
-            cancelable: true,
-            bubbles: true,
-            view: window,
-            clientX: x,
-            clientY: y
-        }));
-    }
-    function mouseDown(x, y) {
-        let underMouse = document.elementFromPoint(x, y);
-        underMouse.dispatchEvent(new MouseEvent("mousedown", {
-            cancelable: true,
-            bubbles: true,
-            view: window,
-            clientX: x,
-            clientY: y
-        }));
-        console.log("mouse down at " + x + ", " + y);
-    }
-    function mouseEnterPage() {
-        let width = window.innerWidth;
-        let centerX = window.innerWidth / 2;
-        let centerY = window.innerHeight / 2;
-        CONTAINER.dispatchEvent(new MouseEvent("mouseenter", {
-            bubbles: true,
-            view: window,
-            clientX: width,
-            clientY: centerY
-        }));
-        CONTAINER.dispatchEvent(new MouseEvent("mouseover", {
-            cancelable: true,
-            bubbles: true,
-            view: window,
-            clientX: width,
-            clientY: centerY
-        }));
-        for (let i = 1; i < centerX; i++) {
+    /*
+        * Input layer.
+        *
+        * Events built with `new MouseEvent(...)` and dispatchEvent() always have
+        * isTrusted === false, which a captcha can check in one line. The
+        * background service worker can instead dispatch the same input over the
+        * DevTools protocol, which enters the browser's real input pipeline and
+        * produces trusted events.
+        *
+        * CDP is unavailable in Firefox, when the debugger permission is denied,
+        * and when DevTools is already attached to this tab, so every helper falls
+        * back to the old synthetic dispatch. The fallback is detectable; it is
+        * only here so the extension keeps working rather than dying outright.
+    */
+    let trustedInputAvailable = null;
+    let mouseIsDown = false;
+    function sendInputMessage(message) {
+        return __awaiter(this, void 0, void 0, function* () {
             try {
-                mouseMove(width - i, centerY);
-                mouseOver(width - i, centerY);
+                let resp = yield chrome.runtime.sendMessage(message);
+                return resp !== undefined && resp !== null && resp.ok === true;
             }
             catch (err) {
-                console.log("error moving mouse into page: ");
-                console.dir(err);
+                console.log("input request to background failed: " + err);
+                return false;
+            }
+        });
+    }
+    function acquireTrustedInput() {
+        return __awaiter(this, void 0, void 0, function* () {
+            trustedInputAvailable = yield sendInputMessage({ sadCaptchaInput: "acquire" });
+            if (trustedInputAvailable)
+                console.log("using trusted input events via the devtools protocol");
+            else
+                console.log("trusted input unavailable, falling back to synthetic events");
+            return trustedInputAvailable;
+        });
+    }
+    function releaseTrustedInput() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (trustedInputAvailable === true)
+                yield sendInputMessage({ sadCaptchaInput: "release" });
+            trustedInputAvailable = null;
+            mouseIsDown = false;
+        });
+    }
+    /*
+        * Returns false when the event could not be dispatched as trusted input,
+        * in which case the caller is responsible for the synthetic fallback.
+    */
+    function dispatchTrustedMouse(params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (trustedInputAvailable === false)
+                return false;
+            if (trustedInputAvailable === null)
+                yield acquireTrustedInput();
+            if (trustedInputAvailable !== true)
+                return false;
+            let ok = yield sendInputMessage({ sadCaptchaInput: "mouse", params: params });
+            if (!ok) {
+                console.log("trusted input dispatch failed, falling back to synthetic events");
+                trustedInputAvailable = false;
+            }
+            return ok;
+        });
+    }
+    /*
+        * Coordinates handed to the devtools protocol are CSS pixels relative to
+        * the top level viewport, but getBoundingClientRect() on an element we
+        * reached through an iframe's contentWindow is relative to that iframe.
+        * Everything that feeds a coordinate to the input layer goes through here.
+    */
+    function frameOffset(element) {
+        let offset = { x: 0, y: 0 };
+        try {
+            let win = element.ownerDocument.defaultView;
+            while (win !== null && win !== window) {
+                let frame = win.frameElement;
+                if (frame === null)
+                    break;
+                let rect = frame.getBoundingClientRect();
+                offset.x += rect.x + frame.clientLeft;
+                offset.y += rect.y + frame.clientTop;
+                win = win.parent;
             }
         }
+        catch (err) {
+            console.log("could not walk frame chain, assuming top level: " + err);
+        }
+        return offset;
     }
-    function randomMouseMovement() {
-        //let randomX = aroundX + Math.round((Math.random() * 20) - 10)
-        //let randomY = aroundY + Math.round((Math.random() * 20) - 10)
-        let randomX = Math.round(window.innerWidth * Math.random());
-        let randomY = Math.round(window.innerHeight * Math.random());
-        mouseMove(randomX, randomX);
-        mouseOver(randomX, randomY);
-        mouseOut(randomX, randomY);
+    function viewportRect(element) {
+        let rect = element.getBoundingClientRect();
+        let offset = frameOffset(element);
+        if (offset.x === 0 && offset.y === 0)
+            return rect;
+        return new DOMRect(rect.x + offset.x, rect.y + offset.y, rect.width, rect.height);
     }
-    function clickElement(selector) {
-        let ele = document.querySelector(selector);
-        console.log("sending mouse event click");
-        let rect = ele.getBoundingClientRect();
-        let x = rect.x;
-        let y = rect.y;
-        const eventOptions = {
+    /*
+        * document.elementFromPoint() stops at the iframe element, so descend into
+        * same origin frames to find what is actually under the cursor. Only the
+        * synthetic fallback needs this; real input is hit tested by the browser.
+    */
+    function elementFromViewportPoint(x, y) {
+        let element = document.elementFromPoint(x, y);
+        let localX = x;
+        let localY = y;
+        while (element instanceof HTMLIFrameElement) {
+            try {
+                let rect = element.getBoundingClientRect();
+                localX -= rect.x + element.clientLeft;
+                localY -= rect.y + element.clientTop;
+                let inner = element.contentWindow.document.elementFromPoint(localX, localY);
+                if (inner === null)
+                    break;
+                element = inner;
+            }
+            catch (err) {
+                console.log("could not descend into iframe for hit test: " + err);
+                break;
+            }
+        }
+        return element;
+    }
+    function syntheticMouseEvent(type, x, y) {
+        let target = elementFromViewportPoint(x, y);
+        if (target === null)
+            target = CONTAINER;
+        target.dispatchEvent(new PointerEvent(type, {
             pointerType: "mouse",
             cancelable: true,
             bubbles: true,
@@ -369,39 +414,110 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             clientX: x,
             clientY: y,
             button: 0,
-            buttons: 1,
-        };
-        ele.dispatchEvent(new PointerEvent("pointerover", eventOptions));
-        ele.dispatchEvent(new PointerEvent("pointerenter", eventOptions));
-        ele.dispatchEvent(new MouseEvent("mouseover", eventOptions));
-        ele.dispatchEvent(new MouseEvent("mouseenter", eventOptions));
-        ele.dispatchEvent(new MouseEvent("mousemove", eventOptions));
-        ele.dispatchEvent(new PointerEvent("pointermove", eventOptions));
-        ele.dispatchEvent(new PointerEvent("pointerdown", eventOptions));
-        ele.dispatchEvent(new MouseEvent("mousedown", eventOptions));
-        ele.dispatchEvent(new PointerEvent("pointerup", eventOptions));
-        ele.dispatchEvent(new MouseEvent("mouseup", eventOptions));
-        ele.dispatchEvent(new MouseEvent("click", eventOptions));
-    }
-    function mouseMove(x, y, ele) {
-        let c;
-        if (ele === undefined) {
-            c = CONTAINER;
-        }
-        else {
-            c = ele;
-        }
-        c.dispatchEvent(new PointerEvent("mousemove", {
-            pointerType: "mouse",
-            cancelable: true,
-            bubbles: true,
-            view: window,
-            clientX: x,
-            clientY: y
+            buttons: mouseIsDown ? 1 : 0
         }));
     }
+    function mouseDown(x, y) {
+        return __awaiter(this, void 0, void 0, function* () {
+            mouseIsDown = true;
+            let trusted = yield dispatchTrustedMouse({
+                type: "mousePressed",
+                x: x,
+                y: y,
+                button: "left",
+                buttons: 1,
+                clickCount: 1,
+                pointerType: "mouse"
+            });
+            if (!trusted) {
+                syntheticMouseEvent("pointerdown", x, y);
+                syntheticMouseEvent("mousedown", x, y);
+            }
+            console.log("mouse down at " + x + ", " + y);
+        });
+    }
+    function mouseUp(x, y) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let trusted = yield dispatchTrustedMouse({
+                type: "mouseReleased",
+                x: x,
+                y: y,
+                button: "left",
+                buttons: 1,
+                clickCount: 1,
+                pointerType: "mouse"
+            });
+            if (!trusted) {
+                syntheticMouseEvent("pointerup", x, y);
+                syntheticMouseEvent("mouseup", x, y);
+            }
+            mouseIsDown = false;
+            console.log("mouse up at " + x + ", " + y);
+        });
+    }
+    /*
+        * The button state has to ride along on every move: a drag handler that
+        * checks event.buttons sees nothing without it, and the browser will not
+        * infer it for us.
+    */
+    function mouseMove(x, y) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let trusted = yield dispatchTrustedMouse({
+                type: "mouseMoved",
+                x: x,
+                y: y,
+                button: mouseIsDown ? "left" : "none",
+                buttons: mouseIsDown ? 1 : 0,
+                pointerType: "mouse"
+            });
+            if (!trusted) {
+                syntheticMouseEvent("pointermove", x, y);
+                syntheticMouseEvent("mousemove", x, y);
+            }
+        });
+    }
+    function mouseEnterPage() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let width = window.innerWidth;
+            let centerX = window.innerWidth / 2;
+            let centerY = window.innerHeight / 2;
+            /*
+                * Every trusted dispatch is a round trip to the service worker, so walk
+                * in over a fixed number of steps rather than one per pixel.
+            */
+            let steps = 40;
+            for (let i = 1; i <= steps; i++) {
+                try {
+                    yield mouseMove(width - (centerX * (i / steps)), centerY);
+                }
+                catch (err) {
+                    console.log("error moving mouse into page: ");
+                    console.dir(err);
+                }
+                yield new Promise(r => setTimeout(r, 5 + Math.random() * 10));
+            }
+        });
+    }
+    function clickElement(selector) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let ele = document.querySelector(selector);
+            console.log("sending mouse event click");
+            let center = getElementCenter(ele);
+            yield mouseMove(center.x, center.y);
+            yield new Promise(r => setTimeout(r, 30 + Math.random() * 50));
+            yield mouseDown(center.x, center.y);
+            yield new Promise(r => setTimeout(r, 40 + Math.random() * 60));
+            yield mouseUp(center.x, center.y);
+            /*
+                * Trusted input generates the click from the press/release pair; the
+                * synthetic path has to emit it explicitly.
+            */
+            if (trustedInputAvailable !== true)
+                syntheticMouseEvent("click", center.x, center.y);
+        });
+    }
     function getElementCenter(element) {
-        let rect = element.getBoundingClientRect();
+        let rect = viewportRect(element);
         let center = {
             x: rect.x + (rect.width / 2),
             y: rect.y + (rect.height / 2),
@@ -411,12 +527,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         return center;
     }
     function getElementWidth(element) {
-        let rect = element.getBoundingClientRect();
+        let rect = viewportRect(element);
         console.log("element width: " + rect.width);
         return rect.width;
     }
     function computePuzzleSlideDistance(proportionX, puzzleImageEle) {
-        let distance = puzzleImageEle.getBoundingClientRect().width * proportionX;
+        let distance = viewportRect(puzzleImageEle).width * proportionX;
         console.log("puzzle slide distance = " + distance);
         return distance;
     }
@@ -424,7 +540,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         return __awaiter(this, void 0, void 0, function* () {
             yield new Promise(r => setTimeout(r, 1000));
             let puzzleImageSrcOriginal = elementToDataUrl(document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR));
-            clickElement(IMAGE_CRAWL_RESET_BUTTON);
+            yield clickElement(IMAGE_CRAWL_RESET_BUTTON);
             while ((elementToDataUrl(document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR)))
                 === puzzleImageSrcOriginal) {
                 console.log("waiting for refresh...");
@@ -460,12 +576,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     }
     function moveMouseTo(x, y) {
         return __awaiter(this, void 0, void 0, function* () {
-            CONTAINER.dispatchEvent(new MouseEvent("mousemove", {
-                bubbles: true,
-                view: window,
-                clientX: x,
-                clientY: y
-            }));
+            yield mouseMove(x, y);
         });
     }
     function mouseApproach(x, y) {
@@ -476,12 +587,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             const approachPoints = generateNaturalApproach({ x: approachStartX, y: approachStartY }, { x: x, y: y }, 8 + Math.floor(Math.random() * 4));
             // Move cursor to approach the handle naturally
             for (const point of approachPoints) {
-                moveMouseTo(point.x, point.y);
+                yield moveMouseTo(point.x, point.y);
                 yield new Promise(r => setTimeout(r, 15 + Math.random() * 25));
             }
             // Hover on handle with slight jitter
             yield new Promise(r => setTimeout(r, 200 + Math.random() * 150));
-            moveMouseTo(x + (Math.random() * 1.5 - 0.75), y + (Math.random() * 1.5 - 0.75));
+            yield moveMouseTo(x + (Math.random() * 1.5 - 0.75), y + (Math.random() * 1.5 - 0.75));
         });
     }
     function elementToDataUrl(ele) {
@@ -497,7 +608,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     }
     function solveImageCrawl() {
         return __awaiter(this, void 0, void 0, function* () {
-            mouseEnterPage();
+            yield mouseEnterPage();
             let puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
             let puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle));
             let imageCrawlInfo = {
@@ -511,7 +622,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             for (let i = 0; i < 5; i++) {
                 yield refreshImageCrawl();
                 yield new Promise(r => setTimeout(r, 500));
-                puzzleImageEle = (yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR));
+                puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
                 puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle));
                 // Pre-analyze to determine the max distance to drag the slider
                 imageCrawlInfo = yield imageCrawlPreAnalyzeApiCall({ image_b64: puzzleImg });
@@ -533,7 +644,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             const startX = getElementCenter(slideButtonEle).x;
             const startY = getElementCenter(slideButtonEle).y;
             let puzzleEle = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
-            mouseApproach(startX, startY);
+            yield mouseApproach(startX, startY);
             // Press down after a natural delay
             yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
             let trajectory = yield getSlidePieceTrajectory(slideButtonEle, puzzleEle, imageCrawlInfo.slideXProportion);
@@ -552,8 +663,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             for (let pixel = 0; pixel < solutionDistanceBackwards; pixel += 1) {
                 let nextX = currentX - pixel;
                 let nextY = currentY - Math.log(pixel + 1);
-                mouseMove(nextX, nextY);
-                mouseOver(nextX, nextY);
+                yield mouseMove(nextX, nextY);
                 let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5);
                 yield new Promise(r => setTimeout(r, pauseTime));
             }
@@ -564,10 +674,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             // Small final tremor
             const veryFinalX = startX + solution + (Math.random() * 0.3 - 0.15);
             const veryFinalY = currentY + (Math.random() * 0.3 - 0.15);
-            moveMouseTo(veryFinalX, veryFinalY);
+            yield moveMouseTo(veryFinalX, veryFinalY);
             yield new Promise(r => setTimeout(r, 50 + Math.random() * 30));
-            mouseMove(startX + solution, startY);
-            mouseUp(startX + solution, startY);
+            yield mouseMove(startX + solution, startY);
+            yield mouseUp(startX + solution, startY);
             // await new Promise(r => setTimeout(r, 3000));
         });
     }
@@ -584,17 +694,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             console.log("slide bar width: " + slideBarWidth);
             let timesPieceDidNotMove = 0;
             let slideButtonCenter = getElementCenter(slideButton);
-            let puzzleImageBoundingBox = puzzle.getBoundingClientRect();
+            let puzzleImageBoundingBox = viewportRect(puzzle);
             let trajectory = [];
             let mouseStep = 3;
-            mouseDown(slideButtonCenter.x, slideButtonCenter.y);
-            slideButton.dispatchEvent(new MouseEvent("mousedown", {
-                cancelable: true,
-                bubbles: true,
-                view: window,
-                clientX: slideButtonCenter.x,
-                clientY: slideButtonCenter.y
-            }));
+            yield mouseDown(slideButtonCenter.x, slideButtonCenter.y);
             const numSegments = 4;
             yield new Promise(r => setTimeout(r, 180 + Math.random() * 120));
             for (let pixel = 0; pixel < slideBarWidth * 0.85; pixel += mouseStep) {
@@ -603,21 +706,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 if (Math.random() > 0.9) {
                     const tremorX = nextX + (Math.random() * 0.6 - 0.3);
                     const tremorY = nextY + (Math.random() * 0.6 - 0.3);
-                    moveMouseTo(tremorX, tremorY);
+                    yield moveMouseTo(tremorX, tremorY);
                     yield new Promise(r => setTimeout(r, Math.random() * 500));
-                    moveMouseTo(nextX, nextY);
+                    yield moveMouseTo(nextX, nextY);
                 }
                 // Speed up as we go
                 let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5);
                 yield new Promise(r => setTimeout(r, pauseTime));
-                //moveMouseTo(slideButtonCenter.x + pixel, slideButtonCenter.y - pixel)
-                slideButton.dispatchEvent(new MouseEvent("mousemove", {
-                    cancelable: true,
-                    bubbles: true,
-                    view: window,
-                    clientX: nextX,
-                    clientY: nextY
-                }));
+                yield mouseMove(nextX, nextY);
                 yield new Promise(r => setTimeout(r, 10));
                 let trajectoryElement = getTrajectoryElement(pixel, puzzleImageBoundingBox, sliderPieceContainer);
                 // Break the loop if we have surpassed the 
@@ -691,15 +787,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             let sliderButton = document.querySelector(PUZZLE_BUTTON_SELECTOR);
             let buttonCenter = getElementCenter(sliderButton);
             let preRequestSlidePixels = 10;
-            mouseEnterPage();
+            yield mouseEnterPage();
             yield new Promise(r => setTimeout(r, 133.7));
-            mouseMove(buttonCenter.x, buttonCenter.y);
-            mouseOver(buttonCenter.x, buttonCenter.y);
+            yield mouseMove(buttonCenter.x, buttonCenter.y);
             yield new Promise(r => setTimeout(r, 133.7));
-            mouseDown(buttonCenter.x, buttonCenter.y);
+            yield mouseDown(buttonCenter.x, buttonCenter.y);
             yield new Promise(r => setTimeout(r, 133.7));
             for (let i = 1; i < preRequestSlidePixels; i++) {
-                mouseMove(buttonCenter.x + i, buttonCenter.y - Math.log(i) + Math.random() * 3);
+                yield mouseMove(buttonCenter.x + i, buttonCenter.y - Math.log(i) + Math.random() * 3);
                 yield new Promise(r => setTimeout(r, Math.random() * 5 + 10));
             }
             let puzzleSrc = yield getImageSource(PUZZLE_PUZZLE_IMAGE_SELECTOR);
@@ -717,14 +812,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             for (let i = 1; i < distance - preRequestSlidePixels; i += Math.random() * 5) {
                 currentX = buttonCenter.x + i + preRequestSlidePixels;
                 currentY = buttonCenter.y - Math.log(i) + Math.random() * 3;
-                mouseMove(currentX, currentY);
-                mouseOver(currentX, currentY);
+                yield mouseMove(currentX, currentY);
                 yield new Promise(r => setTimeout(r, Math.random() * 5 + 10));
             }
             yield new Promise(r => setTimeout(r, 133.7));
-            mouseOver(buttonCenter.x + distance, buttonCenter.x - distance);
+            /*
+                * The release has to land on the handle. This used to pass
+                * buttonCenter.x - distance as the y coordinate, which the synthetic
+                * events largely ignored because they were dispatched straight at the
+                * container. Real input is hit tested, so releasing off target drops
+                * the drag.
+            */
+            yield mouseMove(buttonCenter.x + distance, buttonCenter.y);
             yield new Promise(r => setTimeout(r, 133.7));
-            mouseUp(buttonCenter.x + distance, buttonCenter.x - distance);
+            yield mouseUp(buttonCenter.x + distance, buttonCenter.y);
             yield new Promise(r => setTimeout(r, 3000));
         });
     }
@@ -741,23 +842,31 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             yield mouseApproach(startPoint.x, startPoint.y);
             // Call the API and determine loc in viewport to release piece
             let apiResp = yield imageDragApiCall(puzzleImg, pieceImg);
-            let bbox = puzzleImageEle.getBoundingClientRect();
+            let bbox = viewportRect(puzzleImageEle);
             let answerX = bbox.x + (apiResp.proportionalPoints[0].proportionX * bbox.width);
             let answerY = bbox.y + (apiResp.proportionalPoints[0].proportionY * bbox.height);
             console.log("got API response for image drag");
             // Press down after a natural delay
             yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
-            mouseDown(startPoint.x, startPoint.y);
+            yield mouseDown(startPoint.x, startPoint.y);
             console.log("started drag");
-            // Lift the mouse up at the correct location
-            yield moveMouseTo(answerX, answerY);
+            /*
+                * Lift the mouse up at the correct location. A single jump used to be
+                * enough for synthetic events, but a drag driven by real input needs
+                * intermediate moves for the page to track the piece.
+            */
+            const dragPoints = generateNaturalApproach(startPoint, { x: answerX, y: answerY }, 20);
+            for (const point of dragPoints) {
+                yield moveMouseTo(point.x, point.y);
+                yield new Promise(r => setTimeout(r, 10 + Math.random() * 20));
+            }
             console.log("moved mouse to answer");
             yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
-            mouseUp(answerX, answerY);
+            yield mouseUp(answerX, answerY);
             console.log("lifting mouse");
             // Click verify
             yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
-            clickElement(IMAGE_DRAG_VERIFY_BUTTON_SELECTOR);
+            yield clickElement(IMAGE_DRAG_VERIFY_BUTTON_SELECTOR);
             console.log("clicked verify button");
             // wait before continuing to avoid excessive solving
             yield new Promise(r => setTimeout(r, 5000));
@@ -807,6 +916,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                     console.error(e);
                     console.log("proceeding to attempt solution anyways");
                 }
+                /*
+                    * Attach the debugger only for the duration of the solve: Chrome
+                    * shows an infobar on the tab for as long as we hold the session.
+                */
+                yield acquireTrustedInput();
                 try {
                     switch (captchaType) {
                         case CaptchaType.PUZZLE:
@@ -826,6 +940,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                     console.log("restarting captcha loop");
                 }
                 finally {
+                    yield releaseTrustedInput();
                     isCurrentSolve = false;
                     yield new Promise(r => setTimeout(r, 5000));
                     yield solveCaptchaLoop();

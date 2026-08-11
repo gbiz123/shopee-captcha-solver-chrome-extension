@@ -4,6 +4,7 @@
     "chrome": "^0.1.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.1.42"
+    "@types/chrome": "^0.1.42",
+    "typescript": "^7.0.2"
   }
 }

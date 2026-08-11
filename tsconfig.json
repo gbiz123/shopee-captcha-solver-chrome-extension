@@ -12,6 +12,7 @@
     },
     "include": [
         "script.ts",
+		"background.ts",
 		"script_ext.ts"
     ],
 	"types": [
