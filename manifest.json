@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "sad x captcha",
   "description": "mysterious extension",
-  "version": "3.0",
+  "version": "3.0.1",
   "action": {
     "default_popup": "hello.html",
     "default_icon": "logo_icon_black_bg.png"
