@@ -676,8 +676,6 @@ interface Request {
 		// recommends whether or not we should skip this one.
 		// Try until skipRecommended = false
 		for (let i = 0; i < 5; i++) {
-			await refreshImageCrawl()
-			await new Promise(r => setTimeout(r, 500));
 
 			puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
 			puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle))
@@ -689,6 +687,8 @@ interface Request {
 
 			if (imageCrawlInfo.skipRecommended) {
 				console.log("skip is recommended, refreshing captcha and checking for a better one")
+				await refreshImageCrawl()
+				await new Promise(r => setTimeout(r, 500));
 				continue
 			} else {
 				console.log("skip is not recommended, proceeding to solve the current captcha")
@@ -738,7 +738,7 @@ interface Request {
 			let nextX = currentX - pixel
 			let nextY = currentY - Math.log(pixel + 1)
 			await mouseMove(nextX, nextY)
-			let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5)
+			let pauseTime = (100 / (pixel + 1)) + (Math.random() * 5)
 			await new Promise(r => setTimeout(r, pauseTime));
 		}
 		// Hold at final position
@@ -780,7 +780,7 @@ interface Request {
 
 		const numSegments = 4
 
-		await new Promise(r => setTimeout(r, 180 + Math.random() * 120));
+		await new Promise(r => setTimeout(r, Math.random() * 50));
 		for (let pixel = 0; pixel < slideBarWidth * 0.85; pixel += mouseStep) {
 			let nextX = slideButtonCenter.x + pixel
 			let nextY = slideButtonCenter.y - Math.log(pixel + 1)
@@ -788,11 +788,12 @@ interface Request {
 				const tremorX = nextX + (Math.random() * 0.6 - 0.3);
 				const tremorY = nextY + (Math.random() * 0.6 - 0.3);
 				await moveMouseTo(tremorX, tremorY);
-				await new Promise(r => setTimeout(r, Math.random() * 500));
+				// await new Promise(r => setTimeout(r, Math.random() * 200));
+				await new Promise(r => setTimeout(r, Math.random() * 100));
 				await moveMouseTo(nextX, nextY);
 			}
 			// Speed up as we go
-			let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5)
+			let pauseTime = (100 / (pixel + 1)) + (Math.random() * 5)
 			await new Promise(r => setTimeout(r, pauseTime));
 			await mouseMove(nextX, nextY)
 			await new Promise(r => setTimeout(r, 10));

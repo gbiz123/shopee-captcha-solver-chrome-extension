@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = localStorage.getItem("sadCaptchaKey");
+        let apiKey = true;
         if (apiKey) {
-            return apiKey;
+            return "9ffdd94840dc3f32f811b6eddd11cd69";
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
@@ -620,14 +620,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             // recommends whether or not we should skip this one.
             // Try until skipRecommended = false
             for (let i = 0; i < 5; i++) {
-                yield refreshImageCrawl();
-                yield new Promise(r => setTimeout(r, 500));
                 puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
                 puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle));
                 // Pre-analyze to determine the max distance to drag the slider
                 imageCrawlInfo = yield imageCrawlPreAnalyzeApiCall({ image_b64: puzzleImg });
                 if (imageCrawlInfo.skipRecommended) {
                     console.log("skip is recommended, refreshing captcha and checking for a better one");
+                    yield refreshImageCrawl();
+                    yield new Promise(r => setTimeout(r, 500));
                     continue;
                 }
                 else {
@@ -664,7 +664,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 let nextX = currentX - pixel;
                 let nextY = currentY - Math.log(pixel + 1);
                 yield mouseMove(nextX, nextY);
-                let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5);
+                let pauseTime = (100 / (pixel + 1)) + (Math.random() * 5);
                 yield new Promise(r => setTimeout(r, pauseTime));
             }
             // Hold at final position
@@ -699,7 +699,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             let mouseStep = 3;
             yield mouseDown(slideButtonCenter.x, slideButtonCenter.y);
             const numSegments = 4;
-            yield new Promise(r => setTimeout(r, 180 + Math.random() * 120));
+            yield new Promise(r => setTimeout(r, Math.random() * 50));
             for (let pixel = 0; pixel < slideBarWidth * 0.85; pixel += mouseStep) {
                 let nextX = slideButtonCenter.x + pixel;
                 let nextY = slideButtonCenter.y - Math.log(pixel + 1);
@@ -707,11 +707,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                     const tremorX = nextX + (Math.random() * 0.6 - 0.3);
                     const tremorY = nextY + (Math.random() * 0.6 - 0.3);
                     yield moveMouseTo(tremorX, tremorY);
-                    yield new Promise(r => setTimeout(r, Math.random() * 500));
+                    // await new Promise(r => setTimeout(r, Math.random() * 200));
+                    yield new Promise(r => setTimeout(r, Math.random() * 100));
                     yield moveMouseTo(nextX, nextY);
                 }
                 // Speed up as we go
-                let pauseTime = (200 / (pixel + 1)) + (Math.random() * 5);
+                let pauseTime = (100 / (pixel + 1)) + (Math.random() * 5);
                 yield new Promise(r => setTimeout(r, pauseTime));
                 yield mouseMove(nextX, nextY);
                 yield new Promise(r => setTimeout(r, 10));
