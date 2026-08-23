@@ -646,7 +646,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             let puzzleEle = document.querySelector(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
             yield mouseApproach(startX, startY);
             // Press down after a natural delay
-            yield new Promise(r => setTimeout(r, 150 + Math.random() * 200));
+            yield new Promise(r => setTimeout(r, 50 * Math.random()));
             let trajectory = yield getSlidePieceTrajectory(slideButtonEle, puzzleEle, imageCrawlInfo.slideXProportion);
             let request = {
                 piece_image_b64: pieceImg,

@@ -710,7 +710,7 @@ interface Request {
 		await mouseApproach(startX, startY)
 
 		// Press down after a natural delay
-		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
+		await new Promise(r => setTimeout(r, 50 * Math.random()));
 
 
 		let trajectory = await getSlidePieceTrajectory(
