@@ -26,9 +26,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         }
     });
     function getApiKey() {
-        let apiKey = true;
+        let apiKey = localStorage.getItem("sadCaptchaKey");
         if (apiKey) {
-            return "9ffdd94840dc3f32f811b6eddd11cd69";
+            return apiKey;
         }
         else {
             throw new Error("could not get sadCaptchaKey from localStorage");
