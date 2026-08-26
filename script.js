@@ -481,19 +481,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             let width = window.innerWidth;
             let centerX = window.innerWidth / 2;
             let centerY = window.innerHeight / 2;
-            /*
-                * Every trusted dispatch is a round trip to the service worker, so walk
-                * in over a fixed number of steps rather than one per pixel.
-            */
-            let steps = 40;
-            for (let i = 1; i <= steps; i++) {
-                try {
-                    yield mouseMove(width - (centerX * (i / steps)), centerY);
-                }
-                catch (err) {
-                    console.log("error moving mouse into page: ");
-                    console.dir(err);
-                }
+            let entryPath = generateNaturalApproach({ x: 0, y: centerY * 0.9 }, { x: centerX, y: centerY }, (Math.random() * 10) + 50);
+            for (let i = 0; i < entryPath.length; i++) {
+                let pt = entryPath[i];
+                yield mouseMove(pt.x, pt.y);
                 yield new Promise(r => setTimeout(r, 5 + Math.random() * 10));
             }
         });

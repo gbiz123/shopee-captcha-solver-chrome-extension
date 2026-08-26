@@ -518,18 +518,15 @@ interface Request {
 		let width = window.innerWidth
 		let centerX = window.innerWidth / 2
 		let centerY = window.innerHeight / 2
-		/*
-			* Every trusted dispatch is a round trip to the service worker, so walk
-			* in over a fixed number of steps rather than one per pixel.
-		*/
-		let steps = 40
-		for (let i = 1; i <= steps; i++) {
-			try {
-				await mouseMove(width - (centerX * (i / steps)), centerY)
-			} catch (err) {
-				console.log("error moving mouse into page: ")
-				console.dir(err)
-			}
+
+		let entryPath = generateNaturalApproach(
+			{x: 0, y: centerY * 0.9},
+			{x: centerX, y: centerY},
+			(Math.random() * 10) + 50
+		)
+		for (let i = 0; i < entryPath.length; i++) {
+			let pt = entryPath[i]
+			await mouseMove(pt.x, pt.y)
 			await new Promise(r => setTimeout(r, 5 + Math.random() * 10));
 		}
 	}
@@ -595,7 +592,11 @@ interface Request {
 		console.log("refresh complete")
 	}
 
-	function generateNaturalApproach(start: {x: number, y: number}, end: {x: number, y: number}, steps: number): Array<{x: number, y: number}> {
+	function generateNaturalApproach(
+		start: {x: number, y: number},
+		end: {x: number, y: number},
+		steps: number
+	): Array<{x: number, y: number}> {
 		const control1 = {
 			x: start.x + (end.x - start.x) * (0.2 + Math.random() * 0.2),
 			y: start.y + (Math.random() * 15 - 5)
