@@ -654,16 +654,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                     // Simulate mouse moving slowly and precisely as we return to the correct location
                     if (Math.random() < 0.2) {
                         // Human mouse might make little pauses here and there, so we make a longer delay
-                        pauseTime = Math.random() * 50 + 100;
+                        pauseTime = Math.random() * 50;
                     }
                     else {
                         // Otherwise it should just be a very short delay
-                        pauseTime = Math.random() * 5;
+                        pauseTime = 1;
                     }
                     yield new Promise(r => setTimeout(r, pauseTime));
                 }
                 // Hold at final position
-                const holdTime = Math.random() * 500;
+                const holdTime = Math.random() * 200;
                 console.log(`Holding at final position for ${Math.round(holdTime)}ms`);
                 yield new Promise(r => setTimeout(r, holdTime));
                 // Small final tremor
