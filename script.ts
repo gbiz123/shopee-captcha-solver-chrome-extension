@@ -677,7 +677,6 @@ interface Request {
 		// recommends whether or not we should skip this one.
 		// Try until skipRecommended = false
 		for (let i = 0; i < 5; i++) {
-
 			puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
 			puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle))
 
@@ -727,35 +726,42 @@ interface Request {
 		console.log("image crawl request:")
 		console.log(JSON.stringify(request))
 		let solution = await imageCrawlApiCall(request)
-		let currentX = getElementCenter(slideButtonEle).x
-		let currentY = getElementCenter(slideButtonEle).y
-		let solutionDistanceBackwards = currentX - startX - solution
-		await new Promise(r => setTimeout(r, 100));
-		for (
-				let pixel = 0;
-				pixel < solutionDistanceBackwards;
-				pixel += 1
-		) {
-			let nextX = currentX - pixel
-			let nextY = currentY - Math.log(pixel + 1)
-			await mouseMove(nextX, nextY)
-			let pauseTime = (100 / (pixel + 1)) + (Math.random() * 5)
-			await new Promise(r => setTimeout(r, pauseTime));
-		}
-		// Hold at final position
-		const holdTime = Math.random() * 500;
-		console.log(`Holding at final position for ${Math.round(holdTime)}ms`);
-		await new Promise(r => setTimeout(r, holdTime));
-		
-		// Small final tremor
-		const veryFinalX = startX + solution + (Math.random() * 0.3 - 0.15);
-		const veryFinalY = currentY + (Math.random() * 0.3 - 0.15);
-		await moveMouseTo(veryFinalX, veryFinalY);
 
-		await new Promise(r => setTimeout(r, 50 + Math.random() * 30));
-		await mouseMove(startX + solution, startY)
-		await mouseUp(startX + solution, startY)
-		// await new Promise(r => setTimeout(r, 3000));
+		if (!solution) {
+			console.log("solution was undefined, an error must have happened in API call. Refreshing captcha and retrying.")
+			await refreshImageCrawl()
+			await solveImageCrawl()
+		} else {
+			let currentX = getElementCenter(slideButtonEle).x
+			let currentY = getElementCenter(slideButtonEle).y
+			let solutionDistanceBackwards = currentX - startX - solution
+			await new Promise(r => setTimeout(r, 100));
+			for (
+					let pixel = 0;
+					pixel < solutionDistanceBackwards;
+					pixel += 1
+			) {
+				let nextX = currentX - pixel
+				let nextY = currentY - Math.log(pixel + 1)
+				await mouseMove(nextX, nextY)
+				let pauseTime = (100 / (pixel + 1)) + (Math.random() * 5)
+				await new Promise(r => setTimeout(r, pauseTime));
+			}
+			// Hold at final position
+			const holdTime = Math.random() * 500;
+			console.log(`Holding at final position for ${Math.round(holdTime)}ms`);
+			await new Promise(r => setTimeout(r, holdTime));
+			
+			// Small final tremor
+			const veryFinalX = startX + solution + (Math.random() * 0.3 - 0.15);
+			const veryFinalY = currentY + (Math.random() * 0.3 - 0.15);
+			await moveMouseTo(veryFinalX, veryFinalY);
+
+			await new Promise(r => setTimeout(r, 50 + Math.random() * 30));
+			await mouseMove(startX + solution, startY)
+			await mouseUp(startX + solution, startY)
+		}
+
 	}
 
 	/*
