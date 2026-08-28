@@ -664,6 +664,8 @@ interface Request {
 
 	async function solveImageCrawl(): Promise<void> {
 		await refreshImageCrawl()
+
+		await new Promise(r => setTimeout(r, 100));
 		let puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
 		let puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle))
 

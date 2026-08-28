@@ -599,6 +599,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     function solveImageCrawl() {
         return __awaiter(this, void 0, void 0, function* () {
             yield refreshImageCrawl();
+            yield new Promise(r => setTimeout(r, 100));
             let puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
             let puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle));
             // The pre-analyze API on the sadcaptcha side 
