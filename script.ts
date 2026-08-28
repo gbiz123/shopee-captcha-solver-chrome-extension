@@ -688,8 +688,7 @@ interface Request {
 			if (imageCrawlInfo.skipRecommended) {
 				console.log("skip is recommended, refreshing captcha and checking for a better one")
 				await refreshImageCrawl()
-				await new Promise(r => setTimeout(r, 500));
-				continue
+				return await solveImageCrawl()
 			} else {
 				console.log("skip is not recommended, proceeding to solve the current captcha")
 				break
