@@ -618,8 +618,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 if (imageCrawlInfo.skipRecommended) {
                     console.log("skip is recommended, refreshing captcha and checking for a better one");
                     yield refreshImageCrawl();
-                    yield new Promise(r => setTimeout(r, 500));
-                    continue;
+                    return yield solveImageCrawl();
                 }
                 else {
                     console.log("skip is not recommended, proceeding to solve the current captcha");
