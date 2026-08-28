@@ -582,7 +582,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 yield new Promise(r => setTimeout(r, 15 + Math.random() * 25));
             }
             // Hover on handle with slight jitter
-            yield new Promise(r => setTimeout(r, 200 + Math.random() * 150));
             yield moveMouseTo(x + (Math.random() * 1.5 - 0.75), y + (Math.random() * 1.5 - 0.75));
         });
     }
@@ -599,31 +598,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     }
     function solveImageCrawl() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield mouseEnterPage();
             let puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
             let puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle));
-            let imageCrawlInfo = {
-                version: "na",
-                slideXProportion: 0.9,
-                skipRecommended: true
-            };
             // The pre-analyze API on the sadcaptcha side 
             // recommends whether or not we should skip this one.
             // Try until skipRecommended = false
-            for (let i = 0; i < 5; i++) {
-                puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
-                puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle));
-                // Pre-analyze to determine the max distance to drag the slider
-                imageCrawlInfo = yield imageCrawlPreAnalyzeApiCall({ image_b64: puzzleImg });
-                if (imageCrawlInfo.skipRecommended) {
-                    console.log("skip is recommended, refreshing captcha and checking for a better one");
-                    yield refreshImageCrawl();
-                    return yield solveImageCrawl();
-                }
-                else {
-                    console.log("skip is not recommended, proceeding to solve the current captcha");
-                    break;
-                }
+            puzzleImageEle = yield waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR);
+            puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle));
+            // Pre-analyze to determine the max distance to drag the slider
+            let imageCrawlInfo = yield imageCrawlPreAnalyzeApiCall({ image_b64: puzzleImg });
+            if (imageCrawlInfo.skipRecommended) {
+                console.log("skip is recommended, refreshing captcha and checking for a better one");
+                yield refreshImageCrawl();
+                return yield solveImageCrawl();
+            }
+            else {
+                console.log("skip is not recommended, proceeding to solve the current captcha");
             }
             if (imageCrawlInfo === undefined) {
                 throw new Error("imageCrawlInfo was never initialized");
@@ -660,7 +650,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                     let nextX = currentX - pixel;
                     let nextY = currentY - Math.log(pixel + 1);
                     yield mouseMove(nextX, nextY);
-                    let pauseTime = (100 / (pixel + 1)) + (Math.random() * 5);
+                    let pauseTime = 0;
+                    // Simulate mouse moving slowly and precisely as we return to the correct location
+                    if (Math.random() < 0.2) {
+                        // Human mouse might make little pauses here and there, so we make a longer delay
+                        pauseTime = Math.random() * 50 + 100;
+                    }
+                    else {
+                        // Otherwise it should just be a very short delay
+                        pauseTime = Math.random() * 5;
+                    }
                     yield new Promise(r => setTimeout(r, pauseTime));
                 }
                 // Hold at final position
@@ -699,7 +698,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
             for (let pixel = 0; pixel < slideBarWidth * 0.85; pixel += mouseStep) {
                 let nextX = slideButtonCenter.x + pixel;
                 let nextY = slideButtonCenter.y - Math.log(pixel + 1);
-                if (Math.random() > 0.9) {
+                if (Math.random() > 0.1) {
                     const tremorX = nextX + (Math.random() * 0.6 - 0.3);
                     const tremorY = nextY + (Math.random() * 0.6 - 0.3);
                     yield moveMouseTo(tremorX, tremorY);

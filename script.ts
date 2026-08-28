@@ -646,7 +646,6 @@ interface Request {
 		}
 
 		// Hover on handle with slight jitter
-		await new Promise(r => setTimeout(r, 200 + Math.random() * 150));
 		await moveMouseTo(
 			x + (Math.random() * 1.5 - 0.75),
 			y + (Math.random() * 1.5 - 0.75)
@@ -664,7 +663,6 @@ interface Request {
 	}
 
 	async function solveImageCrawl(): Promise<void> {
-		await mouseEnterPage()
 		let puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
 		let puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle))
 
@@ -791,7 +789,7 @@ interface Request {
 		for (let pixel = 0; pixel < slideBarWidth * 0.85; pixel += mouseStep) {
 			let nextX = slideButtonCenter.x + pixel
 			let nextY = slideButtonCenter.y - Math.log(pixel + 1)
-			if (Math.random() > 0.9) {
+			if (Math.random() > 0.1) {
 				const tremorX = nextX + (Math.random() * 0.6 - 0.3);
 				const tremorY = nextY + (Math.random() * 0.6 - 0.3);
 				await moveMouseTo(tremorX, tremorY);
