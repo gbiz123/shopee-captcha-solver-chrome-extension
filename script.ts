@@ -667,32 +667,24 @@ interface Request {
 		await mouseEnterPage()
 		let puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
 		let puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle))
-		let imageCrawlInfo: ImageCrawlPreAnalyzeResponse = {
-			version: "na",
-			slideXProportion: 0.9,
-			skipRecommended: true
-		};
 
 		// The pre-analyze API on the sadcaptcha side 
 		// recommends whether or not we should skip this one.
 		// Try until skipRecommended = false
-		for (let i = 0; i < 5; i++) {
-			puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
-			puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle))
+		puzzleImageEle = await waitForElement(IMAGE_CRAWL_PUZZLE_IMAGE_SELECTOR) as HTMLCanvasElement
+		puzzleImg = getBase64StringFromDataURL(elementToDataUrl(puzzleImageEle))
 
-			// Pre-analyze to determine the max distance to drag the slider
-			imageCrawlInfo = await imageCrawlPreAnalyzeApiCall(
-				{image_b64: puzzleImg}
-			)
+		// Pre-analyze to determine the max distance to drag the slider
+		let imageCrawlInfo = await imageCrawlPreAnalyzeApiCall(
+			{image_b64: puzzleImg}
+		)
 
-			if (imageCrawlInfo.skipRecommended) {
-				console.log("skip is recommended, refreshing captcha and checking for a better one")
-				await refreshImageCrawl()
-				return await solveImageCrawl()
-			} else {
-				console.log("skip is not recommended, proceeding to solve the current captcha")
-				break
-			}
+		if (imageCrawlInfo.skipRecommended) {
+			console.log("skip is recommended, refreshing captcha and checking for a better one")
+			await refreshImageCrawl()
+			return await solveImageCrawl()
+		} else {
+			console.log("skip is not recommended, proceeding to solve the current captcha")
 		}
 
 		if (imageCrawlInfo === undefined) {
@@ -743,7 +735,16 @@ interface Request {
 				let nextX = currentX - pixel
 				let nextY = currentY - Math.log(pixel + 1)
 				await mouseMove(nextX, nextY)
-				let pauseTime = (100 / (pixel + 1)) + (Math.random() * 5)
+
+				let pauseTime = 0
+				// Simulate mouse moving slowly and precisely as we return to the correct location
+				if ( Math.random() < 0.2) {
+					// Human mouse might make little pauses here and there, so we make a longer delay
+					pauseTime = Math.random() * 50 + 100
+				} else {
+					// Otherwise it should just be a very short delay
+					pauseTime = Math.random() * 5
+				}
 				await new Promise(r => setTimeout(r, pauseTime));
 			}
 			// Hold at final position
