@@ -699,8 +699,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
                 let nextX = slideButtonCenter.x + pixel;
                 let nextY = slideButtonCenter.y - Math.log(pixel + 1);
                 if (Math.random() > 0.9) {
-                    const tremorX = nextX + (Math.random() * 0.6 - 0.3);
-                    const tremorY = nextY + (Math.random() * 0.6 - 0.3);
+                    const tremorX = nextX - (Math.random() * 2);
+                    const tremorY = nextY + (Math.random() * 5);
                     yield moveMouseTo(tremorX, tremorY);
                     // await new Promise(r => setTimeout(r, Math.random() * 200));
                     yield new Promise(r => setTimeout(r, Math.random() * 100));
