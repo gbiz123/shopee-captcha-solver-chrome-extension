@@ -790,14 +790,14 @@ interface Request {
 		for (let pixel = 0; pixel < slideBarWidth * 0.85; pixel += mouseStep) {
 			let nextX = slideButtonCenter.x + pixel
 			let nextY = slideButtonCenter.y - Math.log(pixel + 1)
-			// if (Math.random() > 0.9) {
-			// 	const tremorX = nextX + (Math.random() * 0.6 - 0.3);
-			// 	const tremorY = nextY + (Math.random() * 0.6 - 0.3);
-			// 	await moveMouseTo(tremorX, tremorY);
-			// 	// await new Promise(r => setTimeout(r, Math.random() * 200));
-			// 	await new Promise(r => setTimeout(r, Math.random() * 100));
-			// 	await moveMouseTo(nextX, nextY);
-			// }
+			if (Math.random() > 0.9) {
+				const tremorX = nextX + (Math.random() * 0.6 - 0.3);
+				const tremorY = nextY + (Math.random() * 0.6 - 0.3);
+				await moveMouseTo(tremorX, tremorY);
+				// await new Promise(r => setTimeout(r, Math.random() * 200));
+				await new Promise(r => setTimeout(r, Math.random() * 100));
+				await moveMouseTo(nextX, nextY);
+			}
 			// slow down as we go
 			let pauseTime = Math.random() * 10
 			await new Promise(r => setTimeout(r, pauseTime));
