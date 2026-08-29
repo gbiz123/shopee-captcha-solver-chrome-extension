@@ -791,8 +791,8 @@ interface Request {
 			let nextX = slideButtonCenter.x + pixel
 			let nextY = slideButtonCenter.y - Math.log(pixel + 1)
 			if (Math.random() > 0.9) {
-				const tremorX = nextX + (Math.random() * 0.6 - 0.3);
-				const tremorY = nextY + (Math.random() * 0.6 - 0.3);
+				const tremorX = nextX - (Math.random() * 2)
+				const tremorY = nextY + (Math.random() * 5)
 				await moveMouseTo(tremorX, tremorY);
 				// await new Promise(r => setTimeout(r, Math.random() * 200));
 				await new Promise(r => setTimeout(r, Math.random() * 100));
