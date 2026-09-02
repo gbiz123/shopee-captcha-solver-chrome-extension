@@ -1,10 +1,12 @@
 {
-  "dependencies": {
-    "@types/node": "^20.12.11",
-    "chrome": "^0.1.0"
+  "name": "shopee-captcha-solver-chrome-extension",
+  "version": "3.0.2",
+  "private": true,
+  "scripts": {
+    "build": "tsc"
   },
   "devDependencies": {
-    "@types/chrome": "^0.1.42",
-    "typescript": "^7.0.2"
+    "@types/chrome": "^0.0.278",
+    "typescript": "^5.6.3"
   }
 }
