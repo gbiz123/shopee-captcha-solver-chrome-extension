@@ -2,20 +2,17 @@
     "compilerOptions": {
         "noImplicitAny": false,
         "noEmitOnError": true,
-        "removeComments": false,
-        "sourceMap": true,
+        "removeComments": true,
+        "sourceMap": false,
         "target": "es6",
         "lib": ["es2021", "dom"],
-		"types": [
-			"chrome"
-		]
+        "types": [
+            "chrome"
+        ]
     },
     "include": [
         "script.ts",
-		"background.ts",
-		"script_ext.ts"
-    ],
-	"types": [
-		"chrome"
-	]
+        "background.ts",
+        "ext_script.ts"
+    ]
 }
