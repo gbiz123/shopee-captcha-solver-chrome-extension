@@ -952,10 +952,19 @@ interface Request {
 
 		await mouseApproach(startPoint.x, startPoint.y)
 
-		let apiResp = await imageDragApiCall(puzzleImg, pieceImg)
 		let bbox = viewportRect(puzzleImageEle)
-		let answerX = bbox.x + (apiResp.proportionalPoints[0].proportionX * bbox.width)
-		let answerY = bbox.y + (apiResp.proportionalPoints[0].proportionY * bbox.height)
+		let answerX = 0
+		let answerY = 0
+		try{
+
+			let apiResp = await imageDragApiCall(puzzleImg, pieceImg)
+			answerX = bbox.x + (apiResp.proportionalPoints[0].proportionX * bbox.width)
+			answerY = bbox.y + (apiResp.proportionalPoints[0].proportionY * bbox.height)
+	 	} catch (e) {
+			console.error(e)
+			answerX = bbox.x + (0.5 * bbox.width)
+			answerY = bbox.y + (0.5 * bbox.height)
+		}
 
 		await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
 		await mouseDown(startPoint.x, startPoint.y)
